@@ -149,7 +149,6 @@ When price tags the lower band, it is trading at a statistical outlier discount 
 ### 5. Confluence Matrix (Why HOLD on Oversold?)
 The engine requires **multi-factor confirmation** before issuing actionable trade signals:
 
-```
 ```mermaid
 flowchart TD
     ENGINE["Confluence Engine"]
@@ -173,7 +172,6 @@ flowchart TD
 
     DECISION -- YES --> BUY_SELL
     DECISION -- "NO (Conflict)" --> HOLD
-```
 
 * **Example:** If Bitcoin's RSI hits **21.7** (heavily oversold), but the MACD histogram is negative and dropping, the system refuses to buy. It issues a **`HOLD`** to prevent entering a cascading drop. It upgrades to **`BUY`** only once momentum flattens or curls upward.
 

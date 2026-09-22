@@ -1,11 +1,4 @@
-﻿# ðŸ’° Finance AI â€” Quantitative Market Signal & Local Advisory System
-
-[![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Ollama](https://img.shields.io/badge/Ollama-LLaMA_3.1_8B-black?logo=ollama&logoColor=white)](https://ollama.com/)
-[![SQLite](https://img.shields.io/badge/Database-SQLite_Time_Series-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![Hardware](https://img.shields.io/badge/Hardware-NVIDIA_RTX_GPU-76B900?logo=nvidia&logoColor=white)](https://www.nvidia.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+﻿# Finance AI â€” Quantitative Market Signal & Local Advisory System
 
 A **100% self-hosted, offline, and zero-cost financial intelligence suite** combining a **24/7 quantitative indicator scanner** with a **private local LLM financial advisor (LLaMA 3.1 8B)**. 
 
@@ -13,7 +6,7 @@ Runs entirely on consumer hardware (tested on an **AMD Ryzen 7 5700X3D + NVIDIA 
 
 ---
 
-## ðŸ“‘ Table of Contents
+## Table of Contents
 
 - [Overview & Philosophy](#-overview--philosophy)
 - [System Architecture](#-system-architecture)
@@ -39,7 +32,7 @@ Runs entirely on consumer hardware (tested on an **AMD Ryzen 7 5700X3D + NVIDIA 
 
 ---
 
-## ðŸŒŸ Overview & Philosophy
+## Overview & Philosophy
 
 Most commercial financial AI products charge recurring monthly subscriptions ($20â€“$100/mo) or per-token API fees while routing your private portfolio data through external corporate servers. Furthermore, pure language models (like raw ChatGPT or Claude) cannot reliably track live numerical prices or perform rapid statistical calculus across thousands of financial candles.
 
@@ -50,7 +43,7 @@ Most commercial financial AI products charge recurring monthly subscriptions ($2
 
 ---
 
-## ðŸ›ï¸ System Architecture
+## System Architecture
 
 ```
                                   YOUR LOCAL PC (100% PRIVATE)
@@ -90,7 +83,7 @@ Most commercial financial AI products charge recurring monthly subscriptions ($2
 
 ---
 
-## ðŸ§  The Two-Brain Architecture
+## The Two-Brain Architecture
 
 | Feature | The Quantitative Engine | The AI Advisor (LLaMA 3.1) |
 | :--- | :--- | :--- |
@@ -102,7 +95,7 @@ Most commercial financial AI products charge recurring monthly subscriptions ($2
 
 ---
 
-## âš¡ Core Features
+## Core Features
 
 - **Multi-Market Scanning**: Live tracking across US Mega-Cap Tech, S&P 500 / NASDAQ ETFs, Cryptocurrencies, Major Forex pairs, and Brazilian Equities (B3).
 - **Rule-Based Confluence Voting**: Replaces emotional trading with a strict multi-indicator agreement matrix.
@@ -115,7 +108,7 @@ Most commercial financial AI products charge recurring monthly subscriptions ($2
 
 ---
 
-## ðŸ“ Quantitative Indicator Methodology
+## Quantitative Indicator Methodology
 
 ### 1. Relative Strength Index (RSI)
 Calculated using a 14-period exponential smoothing formula:
@@ -189,7 +182,7 @@ The engine requires **multi-factor confirmation** before issuing actionable trad
 
 ---
 
-## ðŸ“° NLP News Sentiment Engine
+## NLP News Sentiment Engine
 
 Every 15 minutes, the sentiment engine parses global financial news feeds:
 - **Global / US:** Yahoo Finance RSS, Investing.com
@@ -203,7 +196,7 @@ Headlines are processed through the **VADER (Valence Aware Dictionary and sEntim
 
 ---
 
-## ðŸŒ Tracked Asset Coverage
+## Tracked Asset Coverage
 
 The default seed watchlist monitors **24 assets** across four major market classes:
 
@@ -216,7 +209,7 @@ The default seed watchlist monitors **24 assets** across four major market class
 
 ---
 
-## ðŸ“ Project Directory Structure
+## Project Directory Structure
 
 ```text
 finance-ai/
@@ -264,7 +257,7 @@ finance-ai/
 
 ---
 
-## ðŸ’» Hardware & Software Prerequisites
+## Hardware & Software Prerequisites
 
 - **Operating System:** Windows 10/11, macOS, or Linux
 - **Python:** Version 3.10 to 3.14
@@ -273,7 +266,7 @@ finance-ai/
 
 ---
 
-## ðŸš€ Quick Start Installation (Windows)
+## Quick Start Installation (Windows)
 
 ### 1. Clone the Repository
 ```bash
@@ -295,7 +288,8 @@ ollama pull llama3.1:8b
 ### 4. Launch the System
 Double-click **`run.bat`** or run:
 ```cmd
-.un.bat
+.
+un.bat
 ```
 *(Or via PowerShell: `py run_local.py`)*
 
@@ -307,7 +301,7 @@ The system will:
 
 ---
 
-## ðŸ–¥ï¸ Interactive Web Dashboard
+## Interactive Web Dashboard
 
 Access the dashboard at **`http://localhost:8080`**:
 
@@ -320,7 +314,7 @@ Access the dashboard at **`http://localhost:8080`**:
 
 ---
 
-## ðŸ“¡ REST API Reference
+## REST API Reference
 
 The interactive Swagger documentation is available at **`http://localhost:8080/docs`**.
 
@@ -340,7 +334,7 @@ The interactive Swagger documentation is available at **`http://localhost:8080/d
 
 ---
 
-## ðŸ”” Alert Setup (Telegram & Email)
+## Alert Setup (Telegram & Email)
 
 Copy `.env.example` to `.env`:
 ```powershell
@@ -374,7 +368,7 @@ Copy-Item .env.example .env
 
 ---
 
-## âš™ï¸ Customization & Adding Assets
+## Customization & Adding Assets
 
 ### Add a Ticker via the API
 You can add any stock, crypto, or currency pair dynamically:
@@ -394,7 +388,7 @@ curl -X POST http://localhost:8080/market/watchlist   -H "Content-Type: applicat
 
 ---
 
-## â“ Frequently Asked Questions (FAQ)
+## Frequently Asked Questions (FAQ)
 
 #### Q: Will running this system slow down my PC while gaming or working?
 **A:** No. The quantitative engine runs lightweight math every 5 minutes using negligible CPU (~0.1%). The LLaMA 3.1 model only loads into GPU VRAM when you actively submit a chat question or click "AI Market Brief", leaving your GPU completely free the rest of the time.
@@ -407,11 +401,9 @@ curl -X POST http://localhost:8080/market/watchlist   -H "Content-Type: applicat
 
 ---
 
-## âš–ï¸ Disclaimer & License
+## Disclaimer
 
 ### Disclaimer
 > **IMPORTANT:** This software is an experimental quantitative analytics platform designed for educational, research, and informational purposes only. It **does not constitute financial, investment, legal, or tax advice**. Technical indicators and past performance are no guarantee of future market returns. Always conduct your own independent research and consult a licensed financial advisor before making investment decisions.
 
-### License
-Distributed under the **MIT License**. See `LICENSE` for more information.
 

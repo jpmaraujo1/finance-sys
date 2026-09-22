@@ -150,25 +150,30 @@ When price tags the lower band, it is trading at a statistical outlier discount 
 The engine requires **multi-factor confirmation** before issuing actionable trade signals:
 
 ```
-                  ┌─────────────────────────────────────┐
-                  │          Confluence Engine          │
-                  └──────────────────┬──────────────────┘
-                                     │
-           ┌─────────────────────────┼─────────────────────────┐
-           ▼                         ▼                         ▼
-   RSI & Price Level        MACD Trend Momentum       Volume & Structure
- (e.g., RSI < 30 / BB)     (e.g., MACD > Signal)    (e.g., Vol > 1.4x SMA20)
-           │                         │                         │
-           └─────────────────────────┼─────────────────────────┘
-                                     ▼
-                      ┌─────────────────────────────┐
-                      │ Does Confluence Score Agree?│
-                      └──────────────┬──────────────┘
-                                    / \
-                              YES  /   \  NO (Conflict)
-                                  ▼     ▼
-                             BUY / SELL  HOLD
-```                     BUY / SELL          HOLD
+```mermaid
+flowchart TD
+    ENGINE["Confluence Engine"]
+
+    RSI["RSI & Price Level<br/>(e.g., RSI < 30 / BB)"]
+    MACD["MACD Trend Momentum<br/>(e.g., MACD > Signal)"]
+    VOL["Volume & Structure<br/>(e.g., Vol > 1.4x SMA20)"]
+
+    DECISION{"Does Confluence<br/>Score Agree?"}
+
+    BUY_SELL["BUY / SELL"]
+    HOLD["HOLD"]
+
+    ENGINE --> RSI
+    ENGINE --> MACD
+    ENGINE --> VOL
+
+    RSI --> DECISION
+    MACD --> DECISION
+    VOL --> DECISION
+
+    DECISION -- YES --> BUY_SELL
+    DECISION -- "NO (Conflict)" --> HOLD
+```
 
 * **Example:** If Bitcoin's RSI hits **21.7** (heavily oversold), but the MACD histogram is negative and dropping, the system refuses to buy. It issues a **`HOLD`** to prevent entering a cascading drop. It upgrades to **`BUY`** only once momentum flattens or curls upward.
 

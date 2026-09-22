@@ -1,4 +1,4 @@
-﻿# Finance AI â€” Quantitative Market Signal & Local Advisory System
+﻿# Finance AI Quantitative Market Signal & Local Advisory System
 
 A **100% self-hosted, offline, and zero-cost financial intelligence suite** combining a **24/7 quantitative indicator scanner** with a **private local LLM financial advisor (LLaMA 3.1 8B)**. 
 

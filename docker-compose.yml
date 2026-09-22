@@ -1,0 +1,123 @@
+version: "3.8"
+
+# ============================================================
+# Finance AI - Full Trading Analytics & Advisory System
+#
+# Ollama runs natively on your Windows PC (using your RTX 4060)
+# All supporting microservices run in Docker.
+# ============================================================
+
+services:
+  # ?? PostgreSQL Database ??????????????????????????????????
+  postgres:
+    image: postgres:16-alpine
+    container_name: finance-ai-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-finance_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-finance_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finance_user} -d ${POSTGRES_DB:-finance_ai}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ?? ChromaDB Vector Database ??????????????????????????????
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: finance-ai-chromadb
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/vectordb:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+
+  # ?? 24/7 Market Signal & Sentiment Engine ?????????????????
+  signal-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile.signal
+    container_name: finance-ai-signal-engine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-finance_ai}
+      - POSTGRES_USER=${POSTGRES_USER:-finance_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change-this-password}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - BINANCE_API_KEY=${BINANCE_API_KEY:-}
+      - BINANCE_API_SECRET=${BINANCE_API_SECRET:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ?? Finance & Market Advisory API ?????????????????????????
+  finance-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: finance-ai-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data/uploads:/app/data/uploads
+      - ./data/vectordb:/app/data/vectordb
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - LLM_MODEL=${LLM_MODEL:-llama3.1:8b}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-finance_ai}
+      - POSTGRES_USER=${POSTGRES_USER:-finance_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change-this-password}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+
+  # ?? Open WebUI Chat Interface ?????????????????????????????
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: finance-ai-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    volumes:
+      - open_webui_data:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - WEBUI_NAME=Finance AI Assistant
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-change-me-in-production}
+      - DEFAULT_MODELS=llama3.1:8b
+      - DEFAULT_USER_ROLE=user
+      - ENABLE_SIGNUP=${ENABLE_SIGNUP:-false}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  postgres_data:
+  open_webui_data:

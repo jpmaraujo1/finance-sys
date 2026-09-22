@@ -1,0 +1,28 @@
+﻿# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment and Secrets
+.env
+.env.local
+
+# Database & Upload Data
+data/finance.db
+data/finance.db-journal
+data/uploads/*
+!data/uploads/.gitkeep
+data/vectordb/*
+!data/vectordb/.gitkeep
+
+# IDEs and OS files
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+Desktop.ini
+
+# Python Virtual Environments
+venv/
+.venv/
+env/

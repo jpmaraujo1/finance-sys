@@ -1,4 +1,4 @@
-# 💰 Finance AI — Quantitative Market Signal & Local Advisory System
+﻿# ðŸ’° Finance AI â€” Quantitative Market Signal & Local Advisory System
 
 [![Python Version](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -13,7 +13,7 @@ Runs entirely on consumer hardware (tested on an **AMD Ryzen 7 5700X3D + NVIDIA 
 
 ---
 
-## 📑 Table of Contents
+## ðŸ“‘ Table of Contents
 
 - [Overview & Philosophy](#-overview--philosophy)
 - [System Architecture](#-system-architecture)
@@ -39,9 +39,9 @@ Runs entirely on consumer hardware (tested on an **AMD Ryzen 7 5700X3D + NVIDIA 
 
 ---
 
-## 🌟 Overview & Philosophy
+## ðŸŒŸ Overview & Philosophy
 
-Most commercial financial AI products charge recurring monthly subscriptions ($20–$100/mo) or per-token API fees while routing your private portfolio data through external corporate servers. Furthermore, pure language models (like raw ChatGPT or Claude) cannot reliably track live numerical prices or perform rapid statistical calculus across thousands of financial candles.
+Most commercial financial AI products charge recurring monthly subscriptions ($20â€“$100/mo) or per-token API fees while routing your private portfolio data through external corporate servers. Furthermore, pure language models (like raw ChatGPT or Claude) cannot reliably track live numerical prices or perform rapid statistical calculus across thousands of financial candles.
 
 **Finance AI solves both problems by separating math from language:**
 
@@ -50,47 +50,47 @@ Most commercial financial AI products charge recurring monthly subscriptions ($2
 
 ---
 
-## 🏛️ System Architecture
+## ðŸ›ï¸ System Architecture
 
 ```
                                   YOUR LOCAL PC (100% PRIVATE)
- ┌────────────────────────────────────────────────────────────────────────────────────────┐
- │                                                                                        │
- │  ┌────────────────────────┐         ┌───────────────────────────┐                      │
- │  │      Web Chat UI       │         │    Ollama (Native GPU)    │                      │
- │  │    (Port 8080 / HTML)  │◄───────►│  LLaMA 3.1 8B (4.9 GB)    │                      │
- │  └───────────┬────────────┘         │  nomic-embed-text         │                      │
- │              │                      └─────────────▲─────────────┘                      │
- │              ▼                                    │                                    │
- │  ┌────────────────────────────────────────────────┴─────────────┐                      │
- │  │                   FastAPI Application (:8080)                │                      │
- │  │  • /market/summary  • /market/signals  • /market/report      │                      │
- │  │  • /chat            • /market/news     • /market/prices      │                      │
- │  └───────────┬────────────────────────────────────┬─────────────┘                      │
- │              │                                    │                                    │
- │              ▼                                    ▼                                    │
- │  ┌────────────────────────┐         ┌───────────────────────────┐                      │
- │  │    ChromaDB Vector     │         │   SQLite Time Series DB   │                      │
- │  │    (Document RAG)      │         │   (prices, signals, news) │                      │
- │  └────────────────────────┘         └─────────────▲─────────────┘                      │
- │                                                   │                                    │
- │                                     ┌─────────────┴─────────────┐                      │
- │                                     │   24/7 Signal Engine      │                      │
- │                                     │   • APScheduler Worker    │                      │
- │                                     │   • Technical Confluence  │                      │
- │                                     │   • VADER RSS Sentiment   │                      │
- │                                     └─────────────▲─────────────┘                      │
- └───────────────────────────────────────────────────┼────────────────────────────────────┘
-                                                     │ Public Data Feeds
-                                    ┌────────────────┴────────────────┐
-                                    ▼                                 ▼
+ â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+ â”‚                                                                                        â”‚
+ â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”         â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                      â”‚
+ â”‚  â”‚      Web Chat UI       â”‚         â”‚    Ollama (Native GPU)    â”‚                      â”‚
+ â”‚  â”‚    (Port 8080 / HTML)  â”‚â—„â”€â”€â”€â”€â”€â”€â”€â–ºâ”‚  LLaMA 3.1 8B (4.9 GB)    â”‚                      â”‚
+ â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜         â”‚  nomic-embed-text         â”‚                      â”‚
+ â”‚              â”‚                      â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–²â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                      â”‚
+ â”‚              â–¼                                    â”‚                                    â”‚
+ â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                      â”‚
+ â”‚  â”‚                   FastAPI Application (:8080)                â”‚                      â”‚
+ â”‚  â”‚  â€¢ /market/summary  â€¢ /market/signals  â€¢ /market/report      â”‚                      â”‚
+ â”‚  â”‚  â€¢ /chat            â€¢ /market/news     â€¢ /market/prices      â”‚                      â”‚
+ â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                      â”‚
+ â”‚              â”‚                                    â”‚                                    â”‚
+ â”‚              â–¼                                    â–¼                                    â”‚
+ â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”         â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                      â”‚
+ â”‚  â”‚    ChromaDB Vector     â”‚         â”‚   SQLite Time Series DB   â”‚                      â”‚
+ â”‚  â”‚    (Document RAG)      â”‚         â”‚   (prices, signals, news) â”‚                      â”‚
+ â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜         â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–²â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                      â”‚
+ â”‚                                                   â”‚                                    â”‚
+ â”‚                                     â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”                      â”‚
+ â”‚                                     â”‚   24/7 Signal Engine      â”‚                      â”‚
+ â”‚                                     â”‚   â€¢ APScheduler Worker    â”‚                      â”‚
+ â”‚                                     â”‚   â€¢ Technical Confluence  â”‚                      â”‚
+ â”‚                                     â”‚   â€¢ VADER RSS Sentiment   â”‚                      â”‚
+ â”‚                                     â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–²â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                      â”‚
+ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                                     â”‚ Public Data Feeds
+                                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                                    â–¼                                 â–¼
                              Yahoo Finance                       Binance API
                          (Stocks, Forex, B3)                      (Crypto)
 ```
 
 ---
 
-## 🧠 The Two-Brain Architecture
+## ðŸ§  The Two-Brain Architecture
 
 | Feature | The Quantitative Engine | The AI Advisor (LLaMA 3.1) |
 | :--- | :--- | :--- |
@@ -102,7 +102,7 @@ Most commercial financial AI products charge recurring monthly subscriptions ($2
 
 ---
 
-## ⚡ Core Features
+## âš¡ Core Features
 
 - **Multi-Market Scanning**: Live tracking across US Mega-Cap Tech, S&P 500 / NASDAQ ETFs, Cryptocurrencies, Major Forex pairs, and Brazilian Equities (B3).
 - **Rule-Based Confluence Voting**: Replaces emotional trading with a strict multi-indicator agreement matrix.
@@ -111,11 +111,11 @@ Most commercial financial AI products charge recurring monthly subscriptions ($2
 - **VADER News Sentiment Analysis**: Continuously scans financial RSS feeds (Reuters, Yahoo Finance, CoinDesk, InfoMoney) and calculates real-time market sentiment (-1.0 to +1.0).
 - **One-Click AI Executive Briefings**: Instantly prompts local LLaMA 3.1 to synthesize technical data into a strategic market report.
 - **Instant Push Alerts**: Supports automated dispatch of high-conviction trade alerts to **Telegram** and **Email (SMTP)**.
-- **Zero-Dependency Native Mode**: Runs directly on Windows with Python and SQLite—no WSL or Docker virtualization required.
+- **Zero-Dependency Native Mode**: Runs directly on Windows with Python and SQLiteâ€”no WSL or Docker virtualization required.
 
 ---
 
-## 📐 Quantitative Indicator Methodology
+## ðŸ“ Quantitative Indicator Methodology
 
 ### 1. Relative Strength Index (RSI)
 Calculated using a 14-period exponential smoothing formula:
@@ -168,20 +168,20 @@ When price tags the lower band, it is trading at a statistical outlier discount 
 The engine requires **multi-factor confirmation** before issuing actionable trade signals:
 
 ```
-                  ┌─────────────────────────────────────┐
-                  │          Confluence Engine          │
-                  └──────────────────┬──────────────────┘
-                                     │
-           ┌─────────────────────────┼─────────────────────────┐
-           ▼                         ▼                         ▼
+                  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                  â”‚          Confluence Engine          â”‚
+                  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                     â”‚
+           â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+           â–¼                         â–¼                         â–¼
    RSI & Price Level        MACD Trend Momentum         Volume & Structure
   (e.g., RSI < 30 / BB)      (e.g., MACD > Signal)     (e.g., Vol > 1.4x SMA20)
-           │                         │                         │
-           └─────────────────────────┼─────────────────────────┘
-                                     ▼
+           â”‚                         â”‚                         â”‚
+           â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                                     â–¼
                       Does Confluence Score Agree?
                                     /                                   /                                 YES /         \ NO (Conflict)
-                              /                                          ▼               ▼
+                              /                                          â–¼               â–¼
                         BUY / SELL          HOLD
 ```
 
@@ -189,7 +189,7 @@ The engine requires **multi-factor confirmation** before issuing actionable trad
 
 ---
 
-## 📰 NLP News Sentiment Engine
+## ðŸ“° NLP News Sentiment Engine
 
 Every 15 minutes, the sentiment engine parses global financial news feeds:
 - **Global / US:** Yahoo Finance RSS, Investing.com
@@ -197,13 +197,13 @@ Every 15 minutes, the sentiment engine parses global financial news feeds:
 - **Brazil (B3):** InfoMoney, Folha Mercado
 
 Headlines are processed through the **VADER (Valence Aware Dictionary and sEntiment Reasoner)** NLP pipeline to generate a normalized compound polarity score:
-- **Compound Score > +0.05:** Categorized as **Bullish** 🟢
-- **Compound Score < -0.05:** Categorized as **Bearish** 🔴
-- **-0.05 to +0.05:** Categorized as **Neutral** ⚪
+- **Compound Score > +0.05:** Categorized as **Bullish** ðŸŸ¢
+- **Compound Score < -0.05:** Categorized as **Bearish** ðŸ”´
+- **-0.05 to +0.05:** Categorized as **Neutral** âšª
 
 ---
 
-## 🌐 Tracked Asset Coverage
+## ðŸŒ Tracked Asset Coverage
 
 The default seed watchlist monitors **24 assets** across four major market classes:
 
@@ -216,55 +216,55 @@ The default seed watchlist monitors **24 assets** across four major market class
 
 ---
 
-## 📁 Project Directory Structure
+## ðŸ“ Project Directory Structure
 
 ```text
 finance-ai/
-├── alerts/
-│   ├── __init__.py
-│   ├── email_alerts.py          # SMTP HTML trade alert dispatcher
-│   └── telegram_bot.py          # Telegram Bot API alert dispatcher
-├── api/
-│   ├── __init__.py
-│   ├── finance_tools.py         # Transaction categorization & budgeting
-│   ├── main.py                  # FastAPI server & route handlers
-│   └── models.py                # Pydantic data validation schemas
-├── data/
-│   ├── finance.db               # SQLite database (auto-created on first run)
-│   ├── uploads/                 # Storage for user financial documents
-│   └── vectordb/                # ChromaDB vector embedding storage
-├── frontend/
-│   └── index.html               # Responsive single-page dashboard & chat UI
-├── prompts/
-│   └── system_prompt.md         # System instructions for LLaMA 3.1 advisor
-├── rag/
-│   ├── __init__.py
-│   ├── embeddings.py            # Ollama nomic-embed-text wrapper
-│   ├── ingest.py                # Document chunking & vectorization
-│   └── retriever.py             # Vector similarity search
-├── signal_engine/
-│   ├── __init__.py
-│   ├── backtester.py            # Historical win rate calculations
-│   ├── database.py              # SQLite CRUD operations
-│   ├── data_fetcher.py          # Multi-market price data scraper
-│   ├── main.py                  # Standalone worker daemon entrypoint
-│   ├── models.py                # Shared dataclasses & enums
-│   ├── scheduler.py             # APScheduler background task manager
-│   ├── sentiment.py             # VADER news sentiment analyzer
-│   └── technical_analysis.py    # Vectorized indicator math (pure Pandas/NumPy)
-├── .env.example                 # Configuration template
-├── Dockerfile.api               # Optional Docker container for API
-├── Dockerfile.signal            # Optional Docker container for worker
-├── docker-compose.yml           # Optional Docker deployment
-├── requirements.txt             # Python package dependencies
-├── run_local.py                 # Primary Windows Python runner
-├── run.bat                      # One-click Windows batch launcher
-└── README.md                    # System documentation
+â”œâ”€â”€ alerts/
+â”‚   â”œâ”€â”€ __init__.py
+â”‚   â”œâ”€â”€ email_alerts.py          # SMTP HTML trade alert dispatcher
+â”‚   â””â”€â”€ telegram_bot.py          # Telegram Bot API alert dispatcher
+â”œâ”€â”€ api/
+â”‚   â”œâ”€â”€ __init__.py
+â”‚   â”œâ”€â”€ finance_tools.py         # Transaction categorization & budgeting
+â”‚   â”œâ”€â”€ main.py                  # FastAPI server & route handlers
+â”‚   â””â”€â”€ models.py                # Pydantic data validation schemas
+â”œâ”€â”€ data/
+â”‚   â”œâ”€â”€ finance.db               # SQLite database (auto-created on first run)
+â”‚   â”œâ”€â”€ uploads/                 # Storage for user financial documents
+â”‚   â””â”€â”€ vectordb/                # ChromaDB vector embedding storage
+â”œâ”€â”€ frontend/
+â”‚   â””â”€â”€ index.html               # Responsive single-page dashboard & chat UI
+â”œâ”€â”€ prompts/
+â”‚   â””â”€â”€ system_prompt.md         # System instructions for LLaMA 3.1 advisor
+â”œâ”€â”€ rag/
+â”‚   â”œâ”€â”€ __init__.py
+â”‚   â”œâ”€â”€ embeddings.py            # Ollama nomic-embed-text wrapper
+â”‚   â”œâ”€â”€ ingest.py                # Document chunking & vectorization
+â”‚   â””â”€â”€ retriever.py             # Vector similarity search
+â”œâ”€â”€ signal_engine/
+â”‚   â”œâ”€â”€ __init__.py
+â”‚   â”œâ”€â”€ backtester.py            # Historical win rate calculations
+â”‚   â”œâ”€â”€ database.py              # SQLite CRUD operations
+â”‚   â”œâ”€â”€ data_fetcher.py          # Multi-market price data scraper
+â”‚   â”œâ”€â”€ main.py                  # Standalone worker daemon entrypoint
+â”‚   â”œâ”€â”€ models.py                # Shared dataclasses & enums
+â”‚   â”œâ”€â”€ scheduler.py             # APScheduler background task manager
+â”‚   â”œâ”€â”€ sentiment.py             # VADER news sentiment analyzer
+â”‚   â””â”€â”€ technical_analysis.py    # Vectorized indicator math (pure Pandas/NumPy)
+â”œâ”€â”€ .env.example                 # Configuration template
+â”œâ”€â”€ Dockerfile.api               # Optional Docker container for API
+â”œâ”€â”€ Dockerfile.signal            # Optional Docker container for worker
+â”œâ”€â”€ docker-compose.yml           # Optional Docker deployment
+â”œâ”€â”€ requirements.txt             # Python package dependencies
+â”œâ”€â”€ run_local.py                 # Primary Windows Python runner
+â”œâ”€â”€ run.bat                      # One-click Windows batch launcher
+â””â”€â”€ README.md                    # System documentation
 ```
 
 ---
 
-## 💻 Hardware & Software Prerequisites
+## ðŸ’» Hardware & Software Prerequisites
 
 - **Operating System:** Windows 10/11, macOS, or Linux
 - **Python:** Version 3.10 to 3.14
@@ -273,7 +273,7 @@ finance-ai/
 
 ---
 
-## 🚀 Quick Start Installation (Windows)
+## ðŸš€ Quick Start Installation (Windows)
 
 ### 1. Clone the Repository
 ```bash
@@ -307,7 +307,7 @@ The system will:
 
 ---
 
-## 🖥️ Interactive Web Dashboard
+## ðŸ–¥ï¸ Interactive Web Dashboard
 
 Access the dashboard at **`http://localhost:8080`**:
 
@@ -320,7 +320,7 @@ Access the dashboard at **`http://localhost:8080`**:
 
 ---
 
-## 📡 REST API Reference
+## ðŸ“¡ REST API Reference
 
 The interactive Swagger documentation is available at **`http://localhost:8080/docs`**.
 
@@ -340,7 +340,7 @@ The interactive Swagger documentation is available at **`http://localhost:8080/d
 
 ---
 
-## 🔔 Alert Setup (Telegram & Email)
+## ðŸ”” Alert Setup (Telegram & Email)
 
 Copy `.env.example` to `.env`:
 ```powershell
@@ -362,7 +362,7 @@ Copy-Item .env.example .env
 
 ### 2. Gmail SMTP Alerts
 1. In your Google Account, enable **2-Factor Authentication**.
-2. Navigate to **Security → App Passwords** and generate a password for "Mail".
+2. Navigate to **Security â†’ App Passwords** and generate a password for "Mail".
 3. Update `.env`:
    ```env
    ALERT_EMAIL_TO=your-email@gmail.com
@@ -374,7 +374,7 @@ Copy-Item .env.example .env
 
 ---
 
-## ⚙️ Customization & Adding Assets
+## âš™ï¸ Customization & Adding Assets
 
 ### Add a Ticker via the API
 You can add any stock, crypto, or currency pair dynamically:
@@ -394,7 +394,7 @@ curl -X POST http://localhost:8080/market/watchlist   -H "Content-Type: applicat
 
 ---
 
-## ❓ Frequently Asked Questions (FAQ)
+## â“ Frequently Asked Questions (FAQ)
 
 #### Q: Will running this system slow down my PC while gaming or working?
 **A:** No. The quantitative engine runs lightweight math every 5 minutes using negligible CPU (~0.1%). The LLaMA 3.1 model only loads into GPU VRAM when you actively submit a chat question or click "AI Market Brief", leaving your GPU completely free the rest of the time.
@@ -407,10 +407,11 @@ curl -X POST http://localhost:8080/market/watchlist   -H "Content-Type: applicat
 
 ---
 
-## ⚖️ Disclaimer & License
+## âš–ï¸ Disclaimer & License
 
 ### Disclaimer
 > **IMPORTANT:** This software is an experimental quantitative analytics platform designed for educational, research, and informational purposes only. It **does not constitute financial, investment, legal, or tax advice**. Technical indicators and past performance are no guarantee of future market returns. Always conduct your own independent research and consult a licensed financial advisor before making investment decisions.
 
 ### License
 Distributed under the **MIT License**. See `LICENSE` for more information.
+

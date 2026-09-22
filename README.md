@@ -207,50 +207,47 @@ The default seed watchlist monitors **24 assets** across four major market class
 
 ## Project Directory Structure
 
-```text
 finance-ai/
-â”œâ”€â”€ alerts/
-â”‚   â”œâ”€â”€ __init__.py
-â”‚   â”œâ”€â”€ email_alerts.py          # SMTP HTML trade alert dispatcher
-â”‚   â””â”€â”€ telegram_bot.py          # Telegram Bot API alert dispatcher
-â”œâ”€â”€ api/
-â”‚   â”œâ”€â”€ __init__.py
-â”‚   â”œâ”€â”€ finance_tools.py         # Transaction categorization & budgeting
-â”‚   â”œâ”€â”€ main.py                  # FastAPI server & route handlers
-â”‚   â””â”€â”€ models.py                # Pydantic data validation schemas
-â”œâ”€â”€ data/
-â”‚   â”œâ”€â”€ finance.db               # SQLite database (auto-created on first run)
-â”‚   â”œâ”€â”€ uploads/                 # Storage for user financial documents
-â”‚   â””â”€â”€ vectordb/                # ChromaDB vector embedding storage
-â”œâ”€â”€ frontend/
-â”‚   â””â”€â”€ index.html               # Responsive single-page dashboard & chat UI
-â”œâ”€â”€ prompts/
-â”‚   â””â”€â”€ system_prompt.md         # System instructions for LLaMA 3.1 advisor
-â”œâ”€â”€ rag/
-â”‚   â”œâ”€â”€ __init__.py
-â”‚   â”œâ”€â”€ embeddings.py            # Ollama nomic-embed-text wrapper
-â”‚   â”œâ”€â”€ ingest.py                # Document chunking & vectorization
-â”‚   â””â”€â”€ retriever.py             # Vector similarity search
-â”œâ”€â”€ signal_engine/
-â”‚   â”œâ”€â”€ __init__.py
-â”‚   â”œâ”€â”€ backtester.py            # Historical win rate calculations
-â”‚   â”œâ”€â”€ database.py              # SQLite CRUD operations
-â”‚   â”œâ”€â”€ data_fetcher.py          # Multi-market price data scraper
-â”‚   â”œâ”€â”€ main.py                  # Standalone worker daemon entrypoint
-â”‚   â”œâ”€â”€ models.py                # Shared dataclasses & enums
-â”‚   â”œâ”€â”€ scheduler.py             # APScheduler background task manager
-â”‚   â”œâ”€â”€ sentiment.py             # VADER news sentiment analyzer
-â”‚   â””â”€â”€ technical_analysis.py    # Vectorized indicator math (pure Pandas/NumPy)
-â”œâ”€â”€ .env.example                 # Configuration template
-â”œâ”€â”€ Dockerfile.api               # Optional Docker container for API
-â”œâ”€â”€ Dockerfile.signal            # Optional Docker container for worker
-â”œâ”€â”€ docker-compose.yml           # Optional Docker deployment
-â”œâ”€â”€ requirements.txt             # Python package dependencies
-â”œâ”€â”€ run_local.py                 # Primary Windows Python runner
-â”œâ”€â”€ run.bat                      # One-click Windows batch launcher
-â””â”€â”€ README.md                    # System documentation
-```
-
+|-- alerts/
+|   |-- __init__.py
+|   |-- email_alerts.py          # SMTP HTML trade alert dispatcher
+|   \-- telegram_bot.py          # Telegram Bot API alert dispatcher
+|-- api/
+|   |-- __init__.py
+|   |-- finance_tools.py         # Transaction categorization & budgeting
+|   |-- main.py                  # FastAPI server & route handlers
+|   \-- models.py                # Pydantic data validation schemas
+|-- data/
+|   |-- finance.db               # SQLite database (auto-created on first run)
+|   |-- uploads/                 # Storage for user financial documents
+|   \-- vectordb/                # ChromaDB vector embedding storage
+|-- frontend/
+|   \-- index.html               # Responsive single-page dashboard & chat UI
+|-- prompts/
+|   \-- system_prompt.md         # System instructions for LLaMA 3.1 advisor
+|-- rag/
+|   |-- __init__.py
+|   |-- embeddings.py            # Ollama nomic-embed-text wrapper
+|   |-- ingest.py                # Document chunking & vectorization
+|   \-- retriever.py             # Vector similarity search
+|-- signal_engine/
+|   |-- __init__.py
+|   |-- backtester.py            # Historical win rate calculations
+|   |-- database.py              # SQLite CRUD operations
+|   |-- data_fetcher.py          # Multi-market price data scraper
+|   |-- main.py                  # Standalone worker daemon entrypoint
+|   |-- models.py                # Shared dataclasses & enums
+|   |-- scheduler.py             # APScheduler background task manager
+|   |-- sentiment.py             # VADER news sentiment analyzer
+|   \-- technical_analysis.py    # Vectorized indicator math (pure Pandas/NumPy)
+|-- .env.example                 # Configuration template
+|-- Dockerfile.api               # Optional Docker container for API
+|-- Dockerfile.signal            # Optional Docker container for worker
+|-- docker-compose.yml           # Optional Docker deployment
+|-- requirements.txt             # Python package dependencies
+|-- run_local.py                 # Primary Windows Python runner
+|-- run.bat                      # One-click Windows batch launcher
+\-- README.md                    # System documentation
 ---
 
 ## Hardware & Software Prerequisites

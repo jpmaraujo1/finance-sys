@@ -119,28 +119,50 @@ Most commercial financial AI products charge recurring monthly subscriptions ($2
 
 ### 1. Relative Strength Index (RSI)
 Calculated using a 14-period exponential smoothing formula:
-$$RSI = 100 - \left( rac{100}{1 + RS} ight)$$
-Where $RS = rac{	ext{Average Gain}}{	ext{Average Loss}}$ over the last 14 five-minute candles.
+
+```math
+\text{RSI} = 100 - \left( \frac{100}{1 + \text{RS}} \right)
+```
+
+Where:
+```math
+\text{RS} = \frac{\text{Average Gain}}{\text{Average Loss}}
+```
+over the last 14 five-minute candles.
 - **RSI < 30:** Asset is **Oversold** (heavy liquidation, potential discount).
 - **RSI > 70:** Asset is **Overbought** (speculative euphoria, high risk of reversal).
 
 ### 2. Moving Average Convergence Divergence (MACD)
 Calculated using standard 12-period fast EMA and 26-period slow EMA:
-$$	ext{MACD Line} = EMA_{12}(	ext{Close}) - EMA_{26}(	ext{Close})$$
-$$	ext{Signal Line} = EMA_{9}(	ext{MACD Line})$$
-$$	ext{Histogram} = 	ext{MACD Line} - 	ext{Signal Line}$$
+
+```math
+\text{MACD Line} = \text{EMA}_{12}(\text{Close}) - \text{EMA}_{26}(\text{Close})
+```
+```math
+\text{Signal Line} = \text{EMA}_{9}(\text{MACD Line})
+```
+```math
+\text{Histogram} = \text{MACD Line} - \text{Signal Line}
+```
+
 - **MACD > Signal Line & Histogram > 0:** Bullish momentum accelerating.
 - **MACD < Signal Line & Histogram < 0:** Bearish momentum accelerating.
 
 ### 3. Bollinger Bands (BB)
-Measures statistical volatility using a 20-period Simple Moving Average and $\pm 2$ standard deviations:
-$$	ext{Upper Band} = SMA_{20} + (2 	imes \sigma_{20})$$
-$$	ext{Lower Band} = SMA_{20} - (2 	imes \sigma_{20})$$
+Measures statistical volatility using a 20-period Simple Moving Average and $\pm 2$ standard deviations ($\sigma$):
+
+```math
+\text{Upper Band} = \text{SMA}_{20} + (2 \times \sigma_{20})
+```
+```math
+\text{Lower Band} = \text{SMA}_{20} - (2 \times \sigma_{20})
+```
+
 When price tags the lower band, it is trading at a statistical outlier discount ($z \le -2.0$).
 
 ### 4. Trend EMAs & Volume Anomalies
-- **EMA Alignment:** Evaluates short-term momentum by comparing $EMA_9$ against $EMA_{21}$ and long-term trend against $EMA_{50}$ / $EMA_{200}$.
-- **Volume Ratio:** Flags volume surges where $	ext{Volume} \ge 1.4 	imes SMA_{20}(	ext{Volume})$, confirming that institutional volume supports the price action.
+- **EMA Alignment:** Evaluates short-term momentum by comparing $\text{EMA}_9$ against $\text{EMA}_{21}$, and long-term trend against $\text{EMA}_{50}$ / $\text{EMA}_{200}$.
+- **Volume Ratio:** Flags volume surges where $\text{Volume} \ge 1.4 \times \text{SMA}_{20}(\text{Volume})$, confirming that institutional volume supports the price action.
 
 ### 5. Confluence Matrix (Why HOLD on Oversold?)
 The engine requires **multi-factor confirmation** before issuing actionable trade signals:

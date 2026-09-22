@@ -150,22 +150,25 @@ When price tags the lower band, it is trading at a statistical outlier discount 
 The engine requires **multi-factor confirmation** before issuing actionable trade signals:
 
 ```
-                  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                  â”‚          Confluence Engine          â”‚
-                  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                                     â”‚
-           â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-           â–¼                         â–¼                         â–¼
-   RSI & Price Level        MACD Trend Momentum         Volume & Structure
-  (e.g., RSI < 30 / BB)      (e.g., MACD > Signal)     (e.g., Vol > 1.4x SMA20)
-           â”‚                         â”‚                         â”‚
-           â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                                     â–¼
-                      Does Confluence Score Agree?
-                                    /                                   /                                 YES /         \ NO (Conflict)
-                              /                                          â–¼               â–¼
-                        BUY / SELL          HOLD
-```
+                  ┌─────────────────────────────────────┐
+                  │          Confluence Engine          │
+                  └──────────────────┬──────────────────┘
+                                     │
+           ┌─────────────────────────┼─────────────────────────┐
+           ▼                         ▼                         ▼
+   RSI & Price Level        MACD Trend Momentum       Volume & Structure
+ (e.g., RSI < 30 / BB)     (e.g., MACD > Signal)    (e.g., Vol > 1.4x SMA20)
+           │                         │                         │
+           └─────────────────────────┼─────────────────────────┘
+                                     ▼
+                      ┌─────────────────────────────┐
+                      │ Does Confluence Score Agree?│
+                      └──────────────┬──────────────┘
+                                    / \
+                              YES  /   \  NO (Conflict)
+                                  ▼     ▼
+                             BUY / SELL  HOLD
+```                     BUY / SELL          HOLD
 
 * **Example:** If Bitcoin's RSI hits **21.7** (heavily oversold), but the MACD histogram is negative and dropping, the system refuses to buy. It issues a **`HOLD`** to prevent entering a cascading drop. It upgrades to **`BUY`** only once momentum flattens or curls upward.
 

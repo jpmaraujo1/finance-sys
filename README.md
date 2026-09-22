@@ -351,7 +351,7 @@ Copy-Item .env.example .env
 
 ### 2. Gmail SMTP Alerts
 1. In your Google Account, enable **2-Factor Authentication**.
-2. Navigate to **Security â†’ App Passwords** and generate a password for "Mail".
+2. Navigate to **Security -> App Passwords** and generate a password for "Mail".
 3. Update `.env`:
    ```env
    ALERT_EMAIL_TO=your-email@gmail.com

@@ -44,42 +44,32 @@ Most commercial financial AI products charge recurring monthly subscriptions ($2
 ---
 
 ## System Architecture
+```mermaid
+flowchart TD
+    subgraph PC ["YOUR LOCAL PC (100% PRIVATE)"]
+        UI["Web Chat UI<br/>(Port 8080 / HTML)"]
+        OLLAMA["Ollama (Native GPU)<br/>LLaMA 3.1 8B (4.9 GB)"]
+        API["FastAPI Application (:8080)<br/>• /market/summary • /market/signals • /market/report<br/>• /chat • /market/news • /market/prices"]
+        CHROMA["ChromaDB Vector<br/>(Document RAG)"]
+        SQLITE["SQLite Time Series DB<br/>(prices, signals, news)"]
+        ENGINE["24/7 Signal Engine<br/>• APScheduler Worker<br/>• Technical Confluence<br/>• VADER RSS Sentiment"]
 
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        YOUR LOCAL PC (100% PRIVATE)                         │
-│                                                                             │
-│  ┌───────────────────────────┐       ┌────────────────────────────────────┐ │
-│  │        Web Chat UI        │       │        Ollama (Native GPU)         │ │
-│  │    (Port 8080 / HTML)     ├──────►│       LLaMA 3.1 8B (4.9 GB)        │ │
-│  └─────────────┬─────────────┘       └─────────────────┬──────────────────┘ │
-│                │                                       │ nomic-             │
-│                ▼                                       ▼ embed-text         │
-│  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │                        FastAPI Application (:8080)                     │ │
-│  │   • /market/summary   • /market/signals   • /market/report             │ │
-│  │   • /chat             • /market/news      • /market/prices             │ │
-│  └─────────────┬───────────────────────────────────────┬──────────────────┘ │
-│                │                                       │                    │
-│                ▼                                       ▼                    │
-│  ┌───────────────────────────┐       ┌────────────────────────────────────┐ │
-│  │      ChromaDB Vector      │       │       SQLite Time Series DB        │ │
-│  │       (Document RAG)      │       │       (prices, signals, news)      │ │
-│  └───────────────────────────┘       └─────────────────┬──────────────────┘ │
-│                                                        │                    │
-│                                      ┌─────────────────┴──────────────────┐ │
-│                                      │        24/7 Signal Engine          │ │
-│                                      │        • APScheduler Worker        │ │
-│                                      │        • Technical Confluence      │ │
-│                                      │        • VADER RSS Sentiment       │ │
-│                                      └─────────────────┬──────────────────┘ │
-└────────────────────────────────────────────────────────│────────────────────┘
-                                                         │ Public Data Feeds
-                                       ┌─────────────────┴──────────────────┐
-                                       ▼                                    ▼
-                                 Yahoo Finance                         Binance API
-                              (Stocks, Forex, B3)                       (Crypto)
+        UI -->|HTTP| API
+        UI -->|Query| OLLAMA
+        API -->|Embeddings| OLLAMA
+        API --> CHROMA
+        API --> SQLITE
+        ENGINE --> SQLITE
+    end
 
+    FEEDS["Public Data Feeds"]
+    YAHOO["Yahoo Finance<br/>(Stocks, Forex, B3)"]
+    BINANCE["Binance API<br/>(Crypto)"]
 
+    ENGINE --> FEEDS
+    FEEDS --> YAHOO
+    FEEDS --> BINANCE
+```
 ---
 
 ## The Two-Brain Architecture

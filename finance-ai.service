@@ -1,0 +1,14 @@
+﻿[Unit]
+Description=Finance AI 24/7 Market Signal Engine
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/finance-sys
+ExecStart=/home/pi/finance-sys/venv/bin/python3 run_local.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

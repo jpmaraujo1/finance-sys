@@ -33,7 +33,8 @@ def main():
         pass
 
     logger.info("Starting FastAPI & Dashboard on http://localhost:8080 ...")
-    uvicorn.run("api.main:app", host="127.0.0.1", port=8080, log_level="info")
+    uvicorn.run("api.main:app", host="0.0.0.0", port=8080, log_level="info")
 
 if __name__ == "__main__":
     main()
+

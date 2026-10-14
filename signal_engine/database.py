@@ -138,17 +138,39 @@ def save_prices(prices: List[Price]):
 
 
 def get_prices(symbol: str, hours: int = 48) -> pd.DataFrame:
+    """OHLCV whose timestamps fall inside the last `hours` hours.
+
+    Timestamps are parsed to UTC before the cutoff, so a Yahoo offset
+    such as -04:00 is not kept just because the raw string sorts later.
+    """
+    try:
+        window = int(hours)
+    except (TypeError, ValueError):
+        window = 48
+    if window < 0:
+        window = 0
+
     with get_connection() as conn:
-        query = """
+        df = pd.read_sql_query(
+            """
             SELECT timestamp, open, high, low, close, volume
             FROM prices
             WHERE symbol = ?
-            ORDER BY timestamp ASC;
-        """
-        df = pd.read_sql_query(query, conn, params=(symbol,))
-    if not df.empty:
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-        df.set_index("timestamp", inplace=True)
+            ORDER BY timestamp ASC
+            """,
+            conn,
+            params=(symbol,),
+        )
+    if df.empty:
+        return df
+
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+    df = df.dropna(subset=["timestamp"])
+    cutoff = pd.Timestamp.now(tz="UTC") - pd.Timedelta(hours=window)
+    df = df.loc[df["timestamp"] >= cutoff].copy()
+    if df.empty:
+        return df
+    df.set_index("timestamp", inplace=True)
     return df
 
 

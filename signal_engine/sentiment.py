@@ -1,11 +1,15 @@
 from datetime import datetime, timezone
-import email.utils
 from typing import Callable, List, Optional
+from urllib.parse import urlencode
+import re
+
 import feedparser
+import httpx
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from loguru import logger
 
-from .models import NewsItem, WatchlistItem
+from .database import get_watchlist
+from .models import MarketType, NewsItem, WatchlistItem
 
 NEWS_FEEDS = {
     "general": [
@@ -21,6 +25,8 @@ NEWS_FEEDS = {
         "https://www.infomoney.com.br/feed/",
     ],
 }
+
+GOOGLE_NEWS_RSS = "https://news.google.com/rss/search"
 
 COMPANY_MAP = {
     "AAPL": ["Apple", "AAPL", "iPhone", "Mac"],
@@ -50,6 +56,7 @@ COMPANY_MAP = {
 }
 
 analyzer = SentimentIntensityAnalyzer()
+FEED_HEADERS = {"User-Agent": "finance-sys/1.0"}
 
 
 def score_sentiment(text: str) -> float:
@@ -72,38 +79,76 @@ def tag_symbols(headline: str, summary: str = "") -> List[str]:
     return matched
 
 
-def fetch_news() -> List[NewsItem]:
-    """Scrape and parse headlines from financial RSS feeds."""
+def _plain(text: str) -> str:
+    return re.sub(r"<[^>]+>", " ", text or "")
+
+
+def _load_feed(url: str):
+    resp = httpx.get(url, timeout=10.0, follow_redirects=True, headers=FEED_HEADERS)
+    resp.raise_for_status()
+    body = resp.content
+    parsed = feedparser.parse(body)
+    head = body[:400].lower()
+    if not parsed.entries and b"<rss" not in head and b"<feed" not in head:
+        raise ValueError(f"Feed did not return RSS: {url}")
+    return parsed
+
+
+def items_from_parsed(
+    parsed,
+    source: str,
+    limit: int = 15,
+    extra_symbol: Optional[str] = None,
+) -> List[NewsItem]:
     items: List[NewsItem] = []
-    for category, feeds in NEWS_FEEDS.items():
+    for entry in list(getattr(parsed, "entries", []) or [])[:limit]:
+        headline = entry.get("title", "")
+        link = entry.get("link", "")
+        summary = entry.get("summary", "")
+        if not headline or not link:
+            continue
+
+        dt = datetime.now(timezone.utc)
+        if hasattr(entry, "published_parsed") and entry.published_parsed:
+            dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+
+        score = score_sentiment(f"{_plain(headline)}. {_plain(summary)}")
+        syms = tag_symbols(headline, _plain(summary))
+        if extra_symbol and extra_symbol not in syms:
+            syms.insert(0, extra_symbol)
+
+        items.append(
+            NewsItem(
+                headline=headline,
+                url=link,
+                source=source,
+                timestamp=dt,
+                sentiment_score=score,
+                symbols=syms,
+            )
+        )
+    return items
+
+
+def google_news_search_url(item: WatchlistItem) -> str:
+    """Public Google News RSS search for one watchlist name. Not a Google HTML search."""
+    name = (item.display_name or item.symbol or "").strip() or item.symbol
+    if item.market == MarketType.BR_STOCKS:
+        params = {"q": name, "hl": "pt-BR", "gl": "BR", "ceid": "BR:pt-419"}
+    else:
+        params = {"q": name, "hl": "en-US", "gl": "US", "ceid": "US:en"}
+    return GOOGLE_NEWS_RSS + "?" + urlencode(params)
+
+
+def fetch_news() -> List[NewsItem]:
+    """Parse headlines from the existing financial RSS feeds."""
+    items: List[NewsItem] = []
+    for _category, feeds in NEWS_FEEDS.items():
         for url in feeds:
             try:
-                parsed = feedparser.parse(url)
-                for entry in parsed.entries[:15]:
-                    headline = entry.get("title", "")
-                    link = entry.get("link", "")
-                    summary = entry.get("summary", "")
-                    if not headline or not link:
-                        continue
-
-                    # Parse timestamp if available
-                    dt = datetime.now(timezone.utc)
-                    if hasattr(entry, "published_parsed") and entry.published_parsed:
-                        dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
-
-                    score = score_sentiment(f"{headline}. {summary}")
-                    syms = tag_symbols(headline, summary)
-
-                    items.append(
-                        NewsItem(
-                            headline=headline,
-                            url=link,
-                            source=url.split("/")[2],
-                            timestamp=dt,
-                            sentiment_score=score,
-                            symbols=syms,
-                        )
-                    )
+                parsed = _load_feed(url)
+                host = url.split("/")[2]
+                items.extend(items_from_parsed(parsed, source=host, limit=15))
             except Exception as e:
                 logger.warning(f"Failed to fetch RSS feed {url}: {e}")
 
@@ -111,10 +156,41 @@ def fetch_news() -> List[NewsItem]:
     return items
 
 
+def fetch_google_news(watchlist: Optional[List[WatchlistItem]] = None) -> List[NewsItem]:
+    """Google News RSS search once per watchlist name, including B3 names.
+
+    A failed name is skipped. The other names, and the wire feeds, still store.
+    """
+    items: List[NewsItem] = []
+    rows = watchlist if watchlist is not None else get_watchlist()
+    for item in rows:
+        if not item.enabled:
+            continue
+        url = google_news_search_url(item)
+        try:
+            parsed = _load_feed(url)
+            found = items_from_parsed(
+                parsed,
+                source="Google News",
+                limit=5,
+                extra_symbol=item.symbol,
+            )
+            items.extend(found)
+            logger.info(f"Google News {item.display_name}: {len(found)} headlines")
+        except Exception as e:
+            logger.warning(f"Google News failed for {item.display_name or item.symbol}: {e}")
+    logger.info(f"Fetched {len(items)} Google News headlines")
+    return items
+
+
 def run_sentiment_cycle(save_news_fn: Callable[[NewsItem], None]):
     """Execute news fetch and store in database."""
     logger.info("Running news sentiment cycle...")
     news_items = fetch_news()
+    try:
+        news_items.extend(fetch_google_news(get_watchlist()))
+    except Exception as e:
+        logger.warning(f"Google News cycle skipped: {e}")
     for item in news_items:
         try:
             save_news_fn(item)

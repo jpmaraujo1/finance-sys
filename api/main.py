@@ -1,4 +1,5 @@
 ﻿from fastapi.responses import FileResponse
+import asyncio
 import os
 import shutil
 from datetime import datetime, timezone
@@ -39,6 +40,7 @@ from signal_engine.database import (
     get_prices,
 )
 from signal_engine.models import WatchlistItem, MarketType
+from signal_engine.data_fetcher import fetch_quote_pair
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 LLM_MODEL = os.getenv("LLM_MODEL", "llama3.1:8b")
@@ -378,6 +380,26 @@ async def get_price_history(symbol: str, hours: int = Query(default=24, le=168))
         return records
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+@app.get("/market/quotes/{symbol}")
+async def market_quotes(symbol: str):
+    """Live quotes from each source. One failure does not drop the other."""
+    try:
+        quotes = await asyncio.to_thread(fetch_quote_pair, symbol)
+    except Exception as e:
+        logger.warning(f"Quote lookup failed for {symbol}: {e}")
+        if symbol.upper().endswith("USDT") or symbol.upper().endswith("USDC"):
+            quotes = [
+                {"source": "Binance", "status": "unavailable"},
+                {"source": "CNBC", "status": "no_listing"},
+            ]
+        else:
+            quotes = [
+                {"source": "Yahoo Finance", "status": "unavailable"},
+                {"source": "CNBC", "status": "unavailable"},
+            ]
+    return {"symbol": symbol, "quotes": quotes}
 
 
 @app.post("/market/report", response_model=AIReportResponse)

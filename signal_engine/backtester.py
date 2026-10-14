@@ -81,8 +81,9 @@ def backtest_symbol(symbol: str, df: pd.DataFrame, forward_candles: int = 12) ->
 
 
 def get_win_rate(symbol: str, signal_type: SignalType, get_prices_fn) -> Optional[float]:
-    """
-    Get win rate with in-memory caching.
+    """Cached backtest win rate, or None when it was not measured.
+
+    The old failure path returned 65.0. That figure is not a win rate.
     """
     cache_key = f"{symbol}_{signal_type.value}"
     now = datetime.now()
@@ -102,4 +103,4 @@ def get_win_rate(symbol: str, signal_type: SignalType, get_prices_fn) -> Optiona
     except Exception as e:
         logger.warning(f"Failed to compute win rate for {symbol}: {e}")
 
-    return 65.0  # fallback historical baseline
+    return None

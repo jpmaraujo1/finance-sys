@@ -3,475 +3,1083 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance AI — Quantitative Market Intelligence & Local Advisor</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Finance Sys — Market scanner</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: 'Inter', sans-serif; background: #070b14; color: #f1f5f9; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .card { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.07); }
-        .card:hover { border-color: rgba(255, 255, 255, 0.14); }
-        .custom-scroll::-webkit-scrollbar { width: 5px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        :root {
+            --bg: #101311;
+            --panel: #171c19;
+            --panel-2: #121614;
+            --line: #2c3833;
+            --line-strong: #3e4f47;
+            --text: #e7eee9;
+            --muted: #93a399;
+            --faint: #66756c;
+            --brass: #e0b15a;
+            --brass-ink: #2a2112;
+            --buy: #3dbe86;
+            --buy-bg: #143126;
+            --sell: #e36b73;
+            --sell-bg: #3a1e24;
+            --hold: #b7c0c8;
+            --hold-bg: #23282c;
+            --info: #8ec8d6;
+            --danger-bg: #3a1e24;
+            --shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+            --sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+            --mono: "IBM Plex Mono", ui-monospace, monospace;
+            --radius: 16px;
+        }
+        * { box-sizing: border-box; }
+        [hidden] { display: none !important; }
+        html, body { margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            font-family: var(--sans);
+            color: var(--text);
+            background: var(--bg);
+            border-top: 3px solid var(--brass);
+            line-height: 1.45;
+        }
+        button, input, select { font: inherit; color: inherit; }
+        button { cursor: pointer; }
+        a { color: var(--brass); }
+        .wrap { width: min(1180px, calc(100% - 28px)); margin: 0 auto; }
+        header.top {
+            position: sticky; top: 0; z-index: 20;
+            background: rgba(16, 19, 17, 0.92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--line);
+        }
+        .top-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; }
+        .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .mark {
+            width: 36px; height: 36px; border-radius: 10px; flex: 0 0 auto;
+            display: grid; place-items: center;
+            background: var(--brass); color: var(--brass-ink); font-weight: 700;
+        }
+        .brand h1 { margin: 0; font-size: 18px; letter-spacing: 0.04em; font-weight: 650; }
+        .brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+        .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .chip, .btn, .seg button {
+            border: 1px solid var(--line); background: var(--panel); border-radius: 999px;
+            min-height: 36px; padding: 0 12px; color: var(--text);
+        }
+        .chip { font-family: var(--mono); font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+        .chip.on { color: var(--buy); border-color: #245c40; }
+        .chip.off { color: var(--brass); border-color: #5c4a28; }
+        .btn { border-radius: 10px; background: transparent; }
+        .btn.primary { background: var(--brass); color: var(--brass-ink); border-color: var(--brass); font-weight: 650; }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        main { padding: 18px 0 40px; }
+        .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+        .stat .k { color: var(--faint); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+        .stat .v { margin: 4px 0 0; font-family: var(--mono); font-size: 26px; font-weight: 560; }
+        .stat .s { color: var(--muted); font-size: 12px; }
+        .stat.buy .v { color: var(--buy); }
+        .stat.sell .v { color: var(--sell); }
+        .layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.9fr); gap: 14px; margin-top: 14px; align-items: start; }
+        .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+        .panel h2 { margin: 0; font-size: 16px; font-weight: 640; }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+        .head-row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
+        .seg { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+        .seg button { flex: 0 0 auto; background: transparent; color: var(--muted); }
+        .seg button[aria-pressed="true"] { background: #24302b; color: var(--text); border-color: var(--line-strong); }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); font-weight: 560; padding: 8px 8px; border-bottom: 1px solid var(--line); }
+        td { padding: 10px 8px; border-bottom: 1px solid #24302b; vertical-align: top; font-size: 13px; }
+        tr.sig { cursor: pointer; }
+        tr.sig[aria-current="true"] { background: #222a26; }
+        tr.sig:hover { background: #1d2421; }
+        .sym { font-weight: 650; }
+        .px { font-family: var(--mono); }
+        .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; font-size: 11px; font-weight: 650; letter-spacing: 0.02em; }
+        .badge.buy, .badge.strong_buy { background: var(--buy-bg); color: var(--buy); }
+        .badge.sell, .badge.strong_sell { background: var(--sell-bg); color: var(--sell); }
+        .badge.hold { background: var(--hold-bg); color: var(--hold); }
+        .reasons { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .reason { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 7px; }
+        .cards { display: none; }
+        .sig-card {
+            width: 100%; text-align: left; background: var(--panel-2); border: 1px solid var(--line);
+            border-radius: 14px; padding: 12px; margin-bottom: 8px;
+        }
+        .sig-card[aria-current="true"] { border-color: var(--brass); }
+        .sig-top, .sig-meta { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+        .sig-meta { margin-top: 8px; color: var(--muted); font-size: 12px; flex-wrap: wrap; }
+        .side { display: flex; flex-direction: column; gap: 14px; }
+        .quote-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+        .quote-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px; min-height: 92px; }
+        .quote-card .kicker { margin: 0; color: var(--faint); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+        .quote-px { margin: 4px 0; font-family: var(--mono); font-size: 20px; }
+        .quote-px.quiet { font-size: 16px; color: var(--muted); }
+        .quote-card p { margin: 0; }
+        .muted, .meta { color: var(--muted); font-size: 12px; }
+        .windows { display: flex; gap: 6px; flex-wrap: wrap; }
+        .windows button[aria-pressed="true"] { background: var(--brass); color: var(--brass-ink); border-color: var(--brass); }
+        .chart-frame { position: relative; height: 260px; margin-top: 10px; background: var(--panel-2); border-radius: 12px; border: 1px solid var(--line); }
+        .chart-frame canvas { width: 100%; height: 100%; display: block; }
+        .chart-status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; color: var(--muted); font-size: 13px; }
+        .chart-frame.has-data .chart-status { display: none; }
+        .add-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .add-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+        .add-form input, .add-form select {
+            background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-height: 42px; padding: 0 10px;
+        }
+        .span-2 { grid-column: span 2; }
+        .watch-list { list-style: none; margin: 12px 0 0; padding: 0; max-height: 280px; overflow: auto; }
+        .watch-list li { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+        .watch-list button.linkish { background: none; border: 0; color: inherit; padding: 0; text-align: left; }
+        .danger { background: transparent; color: var(--sell); border: 1px solid #5a3036; border-radius: 8px; min-height: 36px; padding: 0 10px; }
+        .lower { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.8fr); gap: 14px; margin-top: 14px; }
+        .news-list { display: flex; flex-direction: column; gap: 8px; max-height: 520px; overflow: auto; }
+        .news-item { display: block; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); text-decoration: none; color: inherit; }
+        .news-item:hover { border-color: var(--line-strong); }
+        .news-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 6px; }
+        .pill { font-size: 11px; border-radius: 999px; padding: 2px 8px; border: 1px solid var(--line); color: var(--muted); }
+        .pill.gnews { color: var(--brass); border-color: #5c4a28; }
+        .pill.up { color: var(--buy); border-color: #245c40; }
+        .pill.down { color: var(--sell); border-color: #5a3036; }
+        .banner, .note {
+            border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; font-size: 14px;
+        }
+        .banner { background: var(--danger-bg); color: #ffd5d8; border: 1px solid #5a3036; }
+        .note { background: #221c12; border: 1px solid #5c4a28; color: #f0e2c4; }
+        .advisor-down p, .brief-copy { margin: 8px 0 0; }
+        #chatLog { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow: auto; margin: 10px 0; }
+        .bubble { border-radius: 12px; padding: 10px 12px; font-size: 13px; white-space: pre-wrap; }
+        .bubble.user { background: #243028; margin-left: 24px; }
+        .bubble.assistant { background: var(--panel-2); border: 1px solid var(--line); margin-right: 12px; }
+        .chat-form { display: flex; gap: 8px; }
+        .chat-form input { flex: 1; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; min-height: 42px; padding: 0 10px; }
+        details.guide { margin-top: 10px; color: var(--muted); font-size: 13px; }
+        details.guide summary { cursor: pointer; color: var(--text); }
+        footer.foot { margin-top: 18px; color: var(--faint); font-size: 12px; }
+        .empty, .loading { color: var(--muted); padding: 18px 8px; font-size: 14px; }
+        @media (min-width: 981px) {
+            .side { position: sticky; top: 78px; }
+        }
+        @media (max-width: 980px) {
+            header.top { position: static; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .stats .stat:last-child { grid-column: span 2; }
+            .layout, .lower { grid-template-columns: 1fr; }
+            .table-wrap { display: none; }
+            .cards { display: block; }
+            .brand h1 { white-space: nowrap; }
+        }
+        @media (max-width: 640px) {
+            .wrap { width: min(1180px, calc(100% - 20px)); }
+            .quote-row, .add-form { grid-template-columns: 1fr; }
+            .span-2 { grid-column: auto; }
+            .brand p { display: none; }
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased">
-    <header class="card sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between border-b border-slate-800/80">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20">
-                <i class="fa-solid fa-chart-line text-lg"></i>
-            </div>
-            <div>
-                <div class="flex items-center gap-2">
-                    <span class="font-extrabold text-lg tracking-tight text-white">Finance AI</span>
-                    <span class="text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> RTX 4060 GPU
-                    </span>
+<body>
+    <header class="top">
+        <div class="wrap top-row">
+            <div class="brand">
+                <div class="mark" aria-hidden="true">Fs</div>
+                <div>
+                    <h1>Finance Sys</h1>
+                    <p>Market scanner for the watchlist on this machine</p>
                 </div>
-                <p class="text-xs text-slate-400">24/7 Confluence Signal Engine & Quantitative Advisor</p>
             </div>
-        </div>
-        <div class="flex items-center gap-3">
-            <button onclick="toggleGuide()" class="px-3 py-1.5 rounded-lg card text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-2 border border-slate-700/60">
-                <i class="fa-regular fa-circle-question text-cyan-400"></i> Signal Guide
-            </button>
-            <button onclick="fetchData()" class="px-3 py-1.5 rounded-lg card text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-2 border border-slate-700/60">
-                <i class="fa-solid fa-rotate text-slate-400" id="refreshIcon"></i> Refresh
-            </button>
-            <button onclick="generateReport()" id="reportBtn" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-xs font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Market Brief
-            </button>
+            <div class="top-actions">
+                <span id="modelChip" class="chip">Checking model</span>
+                <span id="asOf" class="chip">Waiting for the scan</span>
+                <button type="button" class="btn" id="refreshBtn">Refresh</button>
+            </div>
         </div>
     </header>
+    <main class="wrap">
+        <div id="pageError" class="banner" hidden role="alert"></div>
+        <section class="stats" aria-label="Scan summary">
+            <article class="stat"><p class="k">On the list</p><p class="v" id="statTracked">–</p><p class="s">Watchlist names</p></article>
+            <article class="stat buy"><p class="k">Buy side</p><p class="v" id="statBuys">–</p><p class="s">Strong buy and buy</p></article>
+            <article class="stat sell"><p class="k">Sell side</p><p class="v" id="statSells">–</p><p class="s">Strong sell and sell</p></article>
+            <article class="stat"><p class="k">Hold</p><p class="v" id="statHolds">–</p><p class="s">Points did not clear</p></article>
+            <article class="stat"><p class="k">Headline tone</p><p class="v" id="statSentiment">–</p><p class="s" id="statSentimentDesc">Mean of stored headlines</p></article>
+        </section>
 
-    <div id="guideSection" class="hidden max-w-7xl mx-auto w-full px-6 pt-6">
-        <div class="card p-6 rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-slate-900/90 to-slate-950/90 shadow-2xl relative">
-            <button onclick="toggleGuide()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-base font-bold text-cyan-400 flex items-center gap-2 mb-4">
-                <i class="fa-solid fa-graduation-cap"></i> How to Read & Profit from These Signals
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs text-slate-300 leading-relaxed font-sans">
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <p class="font-bold text-emerald-400 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-gauge-high"></i> RSI (Relative Strength Index)</p>
-                    <p class="text-slate-400 mb-2">Measures price momentum on a 0–100 scale:</p>
-                    <ul class="space-y-1 text-[11px]">
-                        <li>• <span class="text-emerald-400 font-bold">&lt; 30 (Oversold):</span> Panic selling / severe discount. Potential bounce zone.</li>
-                        <li>• <span class="text-slate-400 font-bold">30 – 70 (Neutral):</span> Fair value range.</li>
-                        <li>• <span class="text-rose-400 font-bold">&gt; 70 (Overbought):</span> Exuberant buying. High risk of pullback.</li>
-                    </ul>
-                </div>
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <p class="font-bold text-cyan-400 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-wave-square"></i> MACD (Trend Momentum)</p>
-                    <p class="text-slate-400 mb-2">Tracks trend acceleration:</p>
-                    <ul class="space-y-1 text-[11px]">
-                        <li>• <span class="text-emerald-400 font-bold">MACD &gt; Signal:</span> Bullish momentum taking over.</li>
-                        <li>• <span class="text-rose-400 font-bold">MACD &lt; Signal:</span> Bearish momentum, sellers in control.</li>
-                        <li>• <span class="text-amber-400 font-bold">Histogram Turn:</span> The moment a trend flips direction.</li>
-                    </ul>
-                </div>
-                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-                    <p class="font-bold text-amber-400 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-shield-halved"></i> Why 'HOLD' when Oversold?</p>
-                    <p class="text-slate-400 mb-2">The system avoids catching falling knives:</p>
-                    <p class="text-[11px] text-slate-300">
-                        Even if an asset's RSI drops below 30, if the MACD momentum is still plummeting, the system triggers <strong>HOLD</strong> to protect you. It only fires <strong>BUY</strong> when multiple indicators align (RSI bottoming + MACD reversal + volume support).
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <main class="flex-1 p-6 grid grid-cols-1 xl:grid-cols-3 gap-6 max-w-7xl mx-auto w-full">
-        <div class="xl:col-span-2 space-y-6">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="statsRow">
-                <div class="card p-4 rounded-xl">
-                    <div class="flex items-center justify-between text-slate-400 text-xs">
-                        <span>Tracked Assets</span>
-                        <i class="fa-solid fa-layer-group text-slate-500"></i>
-                    </div>
-                    <p class="text-2xl font-black text-white mt-1 font-mono" id="statTracked">--</p>
-                    <span class="text-[10px] text-slate-500">US, Crypto, Forex, B3</span>
-                </div>
-                <div class="card p-4 rounded-xl border-l-4 border-emerald-500">
-                    <div class="flex items-center justify-between text-slate-400 text-xs">
-                        <span>Active Buys</span>
-                        <i class="fa-solid fa-arrow-trend-up text-emerald-400"></i>
-                    </div>
-                    <p class="text-2xl font-black text-emerald-400 mt-1 font-mono" id="statBuys">--</p>
-                    <span class="text-[10px] text-emerald-500/80 font-medium">Confluence Triggered</span>
-                </div>
-                <div class="card p-4 rounded-xl border-l-4 border-rose-500">
-                    <div class="flex items-center justify-between text-slate-400 text-xs">
-                        <span>Active Sells</span>
-                        <i class="fa-solid fa-arrow-trend-down text-rose-400"></i>
-                    </div>
-                    <p class="text-2xl font-black text-rose-400 mt-1 font-mono" id="statSells">--</p>
-                    <span class="text-[10px] text-rose-500/80 font-medium">Overextended Risk</span>
-                </div>
-                <div class="card p-4 rounded-xl border-l-4 border-cyan-500">
-                    <div class="flex items-center justify-between text-slate-400 text-xs">
-                        <span>News Sentiment</span>
-                        <i class="fa-solid fa-newspaper text-cyan-400"></i>
-                    </div>
-                    <p class="text-2xl font-black text-cyan-400 mt-1 font-mono" id="statSentiment">--</p>
-                    <span class="text-[10px] text-cyan-500/80 font-medium" id="statSentimentDesc">VADER Analyzed</span>
-                </div>
-            </div>
-
-            <div id="reportContainer" class="card rounded-2xl p-6 hidden border border-emerald-500/40 bg-gradient-to-b from-emerald-950/20 to-slate-900/40 shadow-xl">
-                <div class="flex items-center justify-between mb-4 pb-3 border-b border-emerald-500/20">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                            <i class="fa-solid fa-microchip"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-sm text-emerald-300">Executive AI Market Briefing</h3>
-                            <p class="text-[10px] text-slate-400">Generated on-demand via local LLaMA 3.1 8B</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-mono text-slate-400" id="reportTime"></span>
-                        <button onclick="document.getElementById('reportContainer').classList.add('hidden')" class="text-slate-400 hover:text-white ml-2"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                </div>
-                <div id="reportContent" class="text-xs text-slate-200 whitespace-pre-line leading-relaxed font-sans bg-slate-950/60 p-4 rounded-xl border border-slate-800 max-h-96 overflow-y-auto custom-scroll"></div>
-            </div>
-
-            <div class="card rounded-2xl p-5">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+        <div class="layout">
+            <section class="panel" id="signalBoard">
+                <div class="head-row">
                     <div>
-                        <h2 class="font-bold text-base text-white flex items-center gap-2">
-                            <i class="fa-solid fa-radar text-amber-400"></i> Live Market Indicator Confluence
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-0.5">Deduplicated live status across all 24 tracked securities</p>
+                        <h2>Signal board</h2>
+                        <p class="sub">Latest row per symbol. Select one to open its price history.</p>
                     </div>
-
-                    <div class="flex flex-wrap gap-1.5 p-1 bg-slate-900/80 rounded-xl border border-slate-800" id="marketFilter">
-                        <button onclick="filterMarket('all')" class="filter-btn active px-2.5 py-1 rounded-lg text-xs font-medium text-white bg-slate-800 transition">All</button>
-                        <button onclick="filterMarket('crypto')" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">Crypto</button>
-                        <button onclick="filterMarket('us_stocks')" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">US Tech</button>
-                        <button onclick="filterMarket('br_stocks')" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">B3 Brazil</button>
-                        <button onclick="filterMarket('forex')" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">Forex</button>
+                    <div class="seg" id="marketFilter" role="group" aria-label="Market">
+                        <button type="button" data-market="all" aria-pressed="true">All</button>
+                        <button type="button" data-market="us_stocks" aria-pressed="false">US</button>
+                        <button type="button" data-market="crypto" aria-pressed="false">Crypto</button>
+                        <button type="button" data-market="br_stocks" aria-pressed="false">B3</button>
+                        <button type="button" data-market="forex" aria-pressed="false">Forex</button>
                     </div>
                 </div>
-
-                <div class="overflow-x-auto rounded-xl border border-slate-800/80">
-                    <table class="w-full text-left border-collapse">
+                <div class="table-wrap">
+                    <table>
                         <thead>
-                            <tr class="bg-slate-900/80 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                                <th class="py-3 px-4">Asset</th>
-                                <th class="py-3 px-3">Price</th>
-                                <th class="py-3 px-3">Signal</th>
-                                <th class="py-3 px-3">RSI</th>
-                                <th class="py-3 px-3">Confidence</th>
-                                <th class="py-3 px-4">Key Indicator Drivers</th>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Price</th>
+                                <th>Signal</th>
+                                <th>RSI</th>
+                                <th>Win rate</th>
+                                <th>Conf.</th>
                             </tr>
                         </thead>
-                        <tbody id="signalsTable" class="divide-y divide-slate-800/60 text-xs">
-                            <tr><td colspan="6" class="py-8 text-center text-slate-500 font-mono">Loading market intelligence...</td></tr>
+                        <tbody id="signalBody">
+                            <tr><td colspan="6" class="loading">Loading the latest scan…</td></tr>
                         </tbody>
                     </table>
                 </div>
-            </div>
-
-            <div class="card rounded-2xl p-5">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <h2 class="font-bold text-base text-white flex items-center gap-2">
-                            <i class="fa-regular fa-newspaper text-cyan-400"></i> Financial Wire & Sentiment
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-0.5">Real-time headlines from Reuters, Yahoo Finance & CoinDesk</p>
-                    </div>
-                    <span class="text-[11px] font-mono text-slate-500">VADER Compound Score</span>
+                <div class="cards" id="signalCards">
+                    <p class="loading">Loading the latest scan…</p>
                 </div>
-                <div id="newsList" class="space-y-2.5 max-h-80 overflow-y-auto pr-1 custom-scroll">
-                    <div class="text-center text-slate-500 py-6 font-mono text-xs">Fetching latest market headlines...</div>
-                </div>
-            </div>
-        </div>
+                <details class="guide">
+                    <summary>How a row is scored</summary>
+                    <p>Each signal is a point score, not an order. RSI, MACD, Bollinger bands, the 9/21 EMA cross, and a volume spike add bull or bear points. Strong buy needs the high bar. Otherwise the name stays on hold. Win rate is a backtest of those same rules, and it is left blank when that backtest did not return a number.</p>
+                </details>
+            </section>
 
-        <div class="space-y-6">
-            <div class="card rounded-2xl p-5 flex flex-col h-[780px] shadow-2xl relative border-slate-800">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                            <i class="fa-solid fa-brain"></i>
-                        </div>
+            <div class="side">
+                <section class="panel" id="symbolPanel">
+                    <div class="head-row">
                         <div>
-                            <h2 class="font-bold text-sm text-white flex items-center gap-2">
-                                AI Quantitative Advisor
-                            </h2>
-                            <p class="text-[10px] text-slate-400">100% Offline • RTX 4060 Accelerated</p>
+                            <h2 id="symbolTitle">Price history</h2>
+                            <p class="sub" id="symbolSub">Select a symbol on the board.</p>
+                        </div>
+                        <div class="windows" id="windows" role="group" aria-label="Chart window">
+                            <button type="button" class="btn" data-hours="6" aria-pressed="false">6h</button>
+                            <button type="button" class="btn" data-hours="24" aria-pressed="true">24h</button>
+                            <button type="button" class="btn" data-hours="48" aria-pressed="false">48h</button>
+                            <button type="button" class="btn" data-hours="168" aria-pressed="false">7d</button>
                         </div>
                     </div>
-                    <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-full">LLaMA 3.1 8B</span>
-                </div>
-
-                <div id="chatHistory" class="flex-1 overflow-y-auto space-y-3.5 py-4 pr-1 text-xs custom-scroll">
-                    <div class="bg-slate-900/80 p-3.5 rounded-2xl text-slate-300 border border-slate-800/80 leading-relaxed">
-                        <p class="font-semibold text-white mb-1 flex items-center gap-1.5"><i class="fa-solid fa-sparkles text-amber-400"></i> Welcome to your Private AI Advisor</p>
-                        I monitor your 24 live market feeds. Ask me why a coin is marked as <strong>HOLD</strong>, what the RSI and MACD readings mean, or for risk analysis on any stock.
+                    <div id="symbolFacts" class="muted"></div>
+                    <div id="quoteCards" class="quote-row" aria-live="polite"></div>
+                    <div class="chart-frame" id="chartFrame">
+                        <p id="chartStatus" class="chart-status">Select a symbol to plot stored closes.</p>
+                        <canvas id="priceChart" aria-label="Close price history"></canvas>
                     </div>
-                </div>
+                    <p id="chartMeta" class="meta"></p>
+                </section>
 
-                <div class="py-2 flex flex-wrap gap-1.5 border-t border-slate-800/60">
-                    <button onclick="quickPrompt('Why are crypto assets currently marked as HOLD instead of BUY?')" class="text-[10px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-emerald-300 border border-slate-800 transition">
-                        Why are cryptos HOLD?
-                    </button>
-                    <button onclick="quickPrompt('Analyze AAPL technical setup based on current signals.')" class="text-[10px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-emerald-300 border border-slate-800 transition">
-                        AAPL Setup
-                    </button>
-                    <button onclick="quickPrompt('What does negative MACD momentum mean for a trader?')" class="text-[10px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-emerald-300 border border-slate-800 transition">
-                        Explain MACD
-                    </button>
-                </div>
-
-                <form onsubmit="sendChat(event)" class="pt-2 flex gap-2">
-                    <input type="text" id="chatInput" placeholder="Ask about stocks, crypto, RSI, or strategy..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition" required>
-                    <button type="submit" id="chatBtn" class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center shadow-lg shadow-emerald-600/20">
-                        <i class="fa-solid fa-paper-plane"></i>
-                    </button>
-                </form>
+                <section class="panel">
+                    <h2>Watchlist</h2>
+                    <p class="sub">Names added here are picked up on the next scan. Removing a name does not delete stored signals.</p>
+                    <form id="addForm" class="add-form">
+                        <label>Symbol
+                            <input id="addSymbol" name="symbol" required maxlength="20" autocomplete="off" spellcheck="false" placeholder="AMD">
+                        </label>
+                        <label>Name
+                            <input id="addName" name="display_name" maxlength="40" placeholder="Advanced Micro Devices">
+                        </label>
+                        <label class="span-2">Market
+                            <select id="addMarket" name="market">
+                                <option value="us_stocks">US</option>
+                                <option value="crypto">Crypto</option>
+                                <option value="forex">Forex</option>
+                                <option value="br_stocks">B3</option>
+                            </select>
+                        </label>
+                        <button type="submit" class="btn primary span-2" id="addBtn">Add to watchlist</button>
+                    </form>
+                    <p id="watchMsg" class="meta" role="status"></p>
+                    <ul id="watchList" class="watch-list">
+                        <li class="loading">Loading the watchlist…</li>
+                    </ul>
+                </section>
             </div>
         </div>
+
+        <div class="lower">
+            <section class="panel">
+                <div class="head-row">
+                    <div>
+                        <h2>Headlines</h2>
+                        <p class="sub">Google News is searched by watchlist name. The other lines are the existing wires. Both are scored with VADER.</p>
+                    </div>
+                    <div class="seg" id="newsFilter" role="group" aria-label="Headline source">
+                        <button type="button" data-source="all" aria-pressed="true">All</button>
+                        <button type="button" data-source="google" aria-pressed="false">Google News</button>
+                        <button type="button" data-source="wires" aria-pressed="false">Wires</button>
+                    </div>
+                </div>
+                <div id="newsList" class="news-list">
+                    <p class="loading">Loading headlines…</p>
+                </div>
+            </section>
+
+            <section class="panel" id="advisor">
+                <div class="head-row">
+                    <div>
+                        <h2>Advisor</h2>
+                        <p class="sub">Chat and the brief need a local model. The scanner does not.</p>
+                    </div>
+                    <button type="button" class="btn" id="briefBtn" disabled>Write brief</button>
+                </div>
+                <div id="advisorCheck" class="note">Checking whether Ollama is reachable…</div>
+                <div id="advisorDown" hidden>
+                    <div class="note" id="advisorDownCopy"></div>
+                    <div id="briefDown" class="note" style="margin-top:10px"></div>
+                </div>
+                <div id="advisorUp" hidden>
+                    <div id="chatLog"></div>
+                    <form id="chatForm" class="chat-form">
+                        <input id="chatInput" type="text" maxlength="500" placeholder="Ask about a symbol on the board" required>
+                        <button type="submit" class="btn primary" id="chatBtn">Send</button>
+                    </form>
+                    <div id="briefUp" class="bubble assistant" hidden></div>
+                </div>
+            </section>
+        </div>
+        <footer class="foot">Technical scores for this watchlist. Not an order and not advice.</footer>
     </main>
-
+    <noscript><p class="wrap">This scanner needs JavaScript to read the local API.</p></noscript>
     <script>
-        let allSignals = [];
-        let currentFilter = 'all';
+        const SOURCE_LABELS = {
+            "Google News": "Google News",
+            "feeds.finance.yahoo.com": "Yahoo Finance",
+            "www.investing.com": "Investing.com",
+            "cointelegraph.com": "Cointelegraph",
+            "coindesk.com": "CoinDesk",
+            "feeds.folha.uol.com.br": "Folha",
+            "www.infomoney.com.br": "InfoMoney"
+        };
+        const MARKET_LABEL = { us_stocks: "US", crypto: "Crypto", forex: "Forex", br_stocks: "B3" };
+        const state = {
+            signals: [],
+            news: [],
+            watchlist: [],
+            watchOk: false,
+            summary: null,
+            filter: "all",
+            newsSource: "all",
+            selected: null,
+            hours: 24,
+            health: "checking",
+            quotes: [],
+            quotesStatus: "idle",
+            prices: [],
+            boardOk: false
+        };
 
-        function toggleGuide() {
-            const el = document.getElementById('guideSection');
-            el.classList.toggle('hidden');
+        function esc(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
         }
 
-        function filterMarket(market) {
-            currentFilter = market;
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('bg-slate-800', 'text-white');
-                btn.classList.add('text-slate-400');
-            });
-            event.target.classList.add('bg-slate-800', 'text-white');
-            event.target.classList.remove('text-slate-400');
-            renderSignals();
+        function sourceLabel(source) {
+            return SOURCE_LABELS[source] || source || "Wire";
         }
 
-        function getRsiBadge(rsi) {
-            if (!rsi && rsi !== 0) return '<span class="text-slate-500">N/A</span>';
-            const val = parseFloat(rsi);
-            if (val < 30) {
-                return `<div class="flex items-center gap-1.5"><span class="font-mono font-bold text-emerald-400">${val.toFixed(1)}</span> <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">OVERSOLD</span></div>`;
-            } else if (val > 70) {
-                return `<div class="flex items-center gap-1.5"><span class="font-mono font-bold text-rose-400">${val.toFixed(1)}</span> <span class="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30">OVERBOUGHT</span></div>`;
-            } else {
-                return `<span class="font-mono text-slate-400">${val.toFixed(1)}</span>`;
-            }
-        }
-
-        function getSignalBadge(type) {
-            switch(type) {
-                case 'STRONG_BUY':
-                    return '<span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30 flex items-center gap-1"><i class="fa-solid fa-angles-up"></i> STRONG BUY</span>';
-                case 'BUY':
-                    return '<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1"><i class="fa-solid fa-arrow-up"></i> BUY</span>';
-                case 'STRONG_SELL':
-                    return '<span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-rose-600 text-white shadow-md shadow-rose-600/30 flex items-center gap-1"><i class="fa-solid fa-angles-down"></i> STRONG SELL</span>';
-                case 'SELL':
-                    return '<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1"><i class="fa-solid fa-arrow-down"></i> SELL</span>';
-                default:
-                    return '<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1"><i class="fa-solid fa-pause text-[8px]"></i> HOLD</span>';
-            }
+        function safeUrl(url) {
+            try {
+                const parsed = new URL(url, window.location.origin);
+                if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.href;
+            } catch (err) { /* ignore */ }
+            return "#";
         }
 
         function formatPrice(symbol, price) {
-            if (symbol.includes('.SA')) return `R$ ${price.toFixed(2)}`;
-            if (symbol.includes('=X')) return `${price.toFixed(4)}`;
-            if (price < 1.0) return `$${price.toFixed(4)}`;
-            return `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            if (!Number.isFinite(price)) return "–";
+            if (String(symbol).includes(".SA")) return "R$ " + price.toFixed(2);
+            if (String(symbol).includes("=X")) return price.toFixed(4);
+            if (price < 1) return "$" + price.toFixed(4);
+            return "$" + price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatWhen(iso) {
+            const date = new Date(iso);
+            if (Number.isNaN(date.getTime())) return "";
+            return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+        }
+
+        function formatUtc(date) {
+            if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const hh = String(date.getUTCHours()).padStart(2, "0");
+            const mm = String(date.getUTCMinutes()).padStart(2, "0");
+            return date.getUTCDate() + " " + months[date.getUTCMonth()] + " " + hh + ":" + mm;
+        }
+
+        function hoursLabel(hours) {
+            if (hours === 168) return "7 days";
+            return hours + " hours";
+        }
+
+        function winText(value) {
+            const number = typeof value === "number" ? value : Number(value);
+            if (value === null || value === undefined || value === "" || !Number.isFinite(number)) return null;
+            return number.toFixed(1) + "%";
+        }
+
+        function signalClass(type) {
+            return String(type || "HOLD").toLowerCase();
+        }
+
+        function signalText(type) {
+            const map = {
+                STRONG_BUY: "Strong buy",
+                BUY: "Buy",
+                HOLD: "Hold",
+                SELL: "Sell",
+                STRONG_SELL: "Strong sell"
+            };
+            return map[type] || type || "Hold";
+        }
+
+        async function readJson(res) {
+            const text = await res.text();
+            let data = null;
+            try { data = text ? JSON.parse(text) : null; } catch (err) { data = null; }
+            if (!res.ok) {
+                const detail = data && data.detail ? data.detail : (text || res.statusText);
+                throw new Error(typeof detail === "string" ? detail : "Request failed");
+            }
+            return data;
+        }
+
+        function visibleSignals() {
+            let rows = state.signals.slice();
+            if (state.watchOk) {
+                const onList = new Set(state.watchlist.map(function (item) { return item.symbol; }));
+                rows = rows.filter(function (row) { return onList.has(row.symbol); });
+            }
+            if (state.filter !== "all") {
+                rows = rows.filter(function (row) { return row.market === state.filter; });
+            }
+            return rows;
+        }
+
+        function reasonHtml(reasons) {
+            const list = Array.isArray(reasons) ? reasons.slice(0, 3) : [];
+            if (!list.length) return "";
+            return '<div class="reasons">' + list.map(function (reason) {
+                return '<span class="reason">' + esc(reason) + "</span>";
+            }).join("") + "</div>";
+        }
+
+        function renderSummary() {
+            const sum = state.summary;
+            if (!sum) return;
+            document.getElementById("statTracked").textContent = sum.total_tracked;
+            document.getElementById("statBuys").textContent = (sum.strong_buys || 0) + (sum.buys || 0);
+            document.getElementById("statSells").textContent = (sum.strong_sells || 0) + (sum.sells || 0);
+            document.getElementById("statHolds").textContent = sum.holds;
+            const sent = Number(sum.overall_sentiment);
+            document.getElementById("statSentiment").textContent = (sent > 0 ? "+" : "") + sent.toFixed(3);
+            document.getElementById("statSentimentDesc").textContent = sent > 0.05 ? "Net bullish" : (sent < -0.05 ? "Net bearish" : "Neutral");
+            if (sum.last_updated) {
+                document.getElementById("asOf").textContent = "As of " + formatWhen(sum.last_updated);
+            }
         }
 
         function renderSignals() {
-            const tbody = document.getElementById('signalsTable');
-            let filtered = allSignals;
-            if (currentFilter !== 'all') {
-                filtered = allSignals.filter(s => s.market === currentFilter);
+            const rows = visibleSignals();
+            const body = document.getElementById("signalBody");
+            const cards = document.getElementById("signalCards");
+            let empty = "No signals stored yet. The scanner writes a row after it has enough candles.";
+            if (state.filter !== "all" && state.signals.length) {
+                empty = "No " + (MARKET_LABEL[state.filter] || "matching") + " signals yet.";
+            } else if (state.watchOk && state.watchlist.length === 0) {
+                empty = "The watchlist is empty, so there is nothing to scan.";
             }
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500 font-mono">No signals found matching this filter.</td></tr>';
+            if (!state.boardOk) {
+                body.innerHTML = '<tr><td colspan="6" class="loading">Loading the latest scan…</td></tr>';
+                cards.innerHTML = '<p class="loading">Loading the latest scan…</p>';
                 return;
             }
-
-            tbody.innerHTML = filtered.map(s => {
-                const reasonsList = s.reasons.map(r => {
-                    let badgeClass = "bg-slate-800 text-slate-300 border-slate-700";
-                    if (r.toLowerCase().includes('oversold') || r.toLowerCase().includes('bullish') || r.toLowerCase().includes('buying')) {
-                        badgeClass = "bg-emerald-950/40 text-emerald-300 border-emerald-800/40";
-                    } else if (r.toLowerCase().includes('negative') || r.toLowerCase().includes('below signal') || r.toLowerCase().includes('overbought')) {
-                        badgeClass = "bg-rose-950/40 text-rose-300 border-rose-800/40";
-                    }
-                    return `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium border ${badgeClass} mr-1 mb-1">${r}</span>`;
-                }).join('');
-
-                return `
-                    <tr class="hover:bg-slate-800/30 transition border-b border-slate-800/60">
-                        <td class="py-3 px-4">
-                            <div class="font-bold text-white tracking-tight">${s.symbol}</div>
-                            <div class="text-[11px] text-slate-400">${s.display_name || s.symbol} <span class="text-[9px] uppercase px-1 rounded bg-slate-800 text-slate-500 ml-1">${s.market.replace('_', ' ')}</span></div>
-                        </td>
-                        <td class="py-3 px-3 font-mono font-semibold text-slate-200">${formatPrice(s.symbol, s.current_price)}</td>
-                        <td class="py-3 px-3">${getSignalBadge(s.signal_type)}</td>
-                        <td class="py-3 px-3">${getRsiBadge(s.rsi)}</td>
-                        <td class="py-3 px-3">
-                            <div class="flex items-center gap-2">
-                                <span class="font-mono text-[11px] text-slate-300">${s.confidence}%</span>
-                                <div class="w-12 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                                    <div class="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full" style="width: ${s.confidence}%"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="py-3 px-4 max-w-md">
-                            <div class="flex flex-wrap">${reasonsList}</div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            if (!rows.length) {
+                body.innerHTML = '<tr><td colspan="6" class="empty">' + esc(empty) + "</td></tr>";
+                cards.innerHTML = '<p class="empty">' + esc(empty) + "</p>";
+                return;
+            }
+            body.innerHTML = rows.map(function (row) {
+                const win = winText(row.win_rate);
+                const current = row.symbol === state.selected ? ' aria-current="true"' : "";
+                return '<tr class="sig" data-symbol="' + esc(row.symbol) + '" tabindex="0"' + current + '>' +
+                    '<td><div class="sym">' + esc(row.symbol) + '</div><div class="muted">' + esc(row.display_name || row.symbol) + " · " + esc(MARKET_LABEL[row.market] || row.market) + "</div>" + reasonHtml(row.reasons) + "</td>" +
+                    '<td class="px">' + esc(formatPrice(row.symbol, Number(row.current_price))) + "</td>" +
+                    '<td><span class="badge ' + signalClass(row.signal_type) + '">' + esc(signalText(row.signal_type)) + "</span></td>" +
+                    '<td class="px">' + (row.rsi === null || row.rsi === undefined ? "–" : Number(row.rsi).toFixed(1)) + "</td>" +
+                    '<td class="px">' + (win ? esc(win) : '<span title="Not measured">–</span>') + "</td>" +
+                    '<td class="px">' + esc(String(row.confidence)) + "</td></tr>";
+            }).join("");
+            cards.innerHTML = rows.map(function (row) {
+                const win = winText(row.win_rate);
+                const current = row.symbol === state.selected ? ' aria-current="true"' : "";
+                return '<button type="button" class="sig-card" data-symbol="' + esc(row.symbol) + '"' + current + '>' +
+                    '<div class="sig-top"><div><div class="sym">' + esc(row.symbol) + '</div><div class="muted">' + esc(row.display_name || "") + "</div></div>" +
+                    '<div class="px">' + esc(formatPrice(row.symbol, Number(row.current_price))) + "</div></div>" +
+                    '<div class="sig-meta"><span class="badge ' + signalClass(row.signal_type) + '">' + esc(signalText(row.signal_type)) + "</span>" +
+                    "<span>RSI " + (row.rsi === null || row.rsi === undefined ? "–" : Number(row.rsi).toFixed(1)) + "</span>" +
+                    "<span>Win " + (win ? esc(win) : "–") + "</span>" +
+                    "<span>" + esc(String(row.confidence)) + "%</span></div>" + reasonHtml(row.reasons) + "</button>";
+            }).join("");
         }
 
-        async function fetchData() {
-            const icon = document.getElementById('refreshIcon');
-            icon.classList.add('fa-spin');
+        function renderSymbolHeader() {
+            const row = state.signals.find(function (item) { return item.symbol === state.selected; });
+            const title = document.getElementById("symbolTitle");
+            const sub = document.getElementById("symbolSub");
+            const facts = document.getElementById("symbolFacts");
+            if (!state.selected) {
+                title.textContent = "Price history";
+                sub.textContent = "Select a symbol on the board.";
+                facts.textContent = "";
+                return;
+            }
+            title.textContent = state.selected;
+            if (!row) {
+                sub.textContent = "On the watchlist. No signal stored yet.";
+                facts.textContent = "";
+                return;
+            }
+            sub.textContent = (row.display_name || state.selected) + " · " + (MARKET_LABEL[row.market] || row.market);
+            const win = winText(row.win_rate);
+            facts.textContent = signalText(row.signal_type) + " · RSI " + (row.rsi == null ? "–" : Number(row.rsi).toFixed(1)) +
+                " · " + (win ? "Win rate " + win : "Win rate not measured");
+        }
+
+        function renderQuotes() {
+            const host = document.getElementById("quoteCards");
+            if (!state.selected) {
+                host.innerHTML = "";
+                return;
+            }
+            if (state.quotesStatus === "loading") {
+                host.innerHTML = '<p class="muted">Checking price sources…</p>';
+                return;
+            }
+            if (state.quotesStatus === "error") {
+                host.innerHTML = '<p class="muted">Live quotes did not load. Stored closes are still plotted when the database has them.</p>';
+                return;
+            }
+            host.innerHTML = (state.quotes || []).map(function (quote) {
+                const name = esc(quote.source || "Source");
+                if (quote.status === "ok" && Number.isFinite(Number(quote.price))) {
+                    return '<article class="quote-card"><p class="kicker">' + name + '</p><p class="quote-px">' +
+                        esc(formatPrice(state.selected, Number(quote.price))) + "</p><p class=\"muted\">" +
+                        esc(quote.as_of ? formatWhen(quote.as_of) : "Latest quote") + "</p></article>";
+                }
+                if (quote.status === "no_listing") {
+                    return '<article class="quote-card"><p class="kicker">' + name + '</p><p class="quote-px quiet">No listing</p><p class="muted">Skipped on this source.</p></article>';
+                }
+                return '<article class="quote-card"><p class="kicker">' + name + '</p><p class="quote-px quiet">Unavailable</p><p class="muted">No response from this source.</p></article>';
+            }).join("");
+        }
+
+        function renderWatchlist() {
+            const list = document.getElementById("watchList");
+            if (!state.watchOk) {
+                list.innerHTML = '<li class="loading">Loading the watchlist…</li>';
+                return;
+            }
+            if (!state.watchlist.length) {
+                list.innerHTML = '<li class="empty">The watchlist is empty. Add a symbol and the next scan will fetch it.</li>';
+                return;
+            }
+            const known = new Set(state.signals.map(function (row) { return row.symbol; }));
+            list.innerHTML = state.watchlist.map(function (item) {
+                const pending = known.has(item.symbol) ? "" : '<div class="muted">No signal yet</div>';
+                return '<li><button type="button" class="linkish" data-symbol="' + esc(item.symbol) + '"><div class="sym">' + esc(item.symbol) +
+                    '</div><div class="muted">' + esc(item.display_name) + " · " + esc(MARKET_LABEL[item.market] || item.market) + "</div>" + pending +
+                    '</button><button type="button" class="danger" data-remove="' + esc(item.symbol) + '">Remove</button></li>';
+            }).join("");
+        }
+
+        function visibleNews() {
+            if (state.newsSource === "google") return state.news.filter(function (item) { return item.source === "Google News"; });
+            if (state.newsSource === "wires") return state.news.filter(function (item) { return item.source !== "Google News"; });
+            return state.news;
+        }
+
+        function renderNews() {
+            const host = document.getElementById("newsList");
+            if (!state.boardOk) {
+                host.innerHTML = '<p class="loading">Loading headlines…</p>';
+                return;
+            }
+            const rows = visibleNews();
+            if (!rows.length) {
+                const copy = state.newsSource === "google"
+                    ? "No Google News headlines stored. Wire headlines are still on the other filter."
+                    : (state.newsSource === "wires"
+                        ? "No wire headlines stored. Google News is still on the other filter."
+                        : "No headlines stored. The news job runs about every 15 minutes.");
+                host.innerHTML = '<p class="empty">' + esc(copy) + "</p>";
+                return;
+            }
+            host.innerHTML = rows.map(function (item) {
+                const tone = item.sentiment_label === "Bullish" ? "up" : (item.sentiment_label === "Bearish" ? "down" : "");
+                const gnews = item.source === "Google News" ? " gnews" : "";
+                return '<a class="news-item" href="' + esc(safeUrl(item.url)) + '" target="_blank" rel="noopener">' +
+                    '<div class="news-top"><span class="pill' + gnews + '">' + esc(sourceLabel(item.source)) + "</span>" +
+                    '<span class="pill ' + tone + '">' + esc(item.sentiment_label || "Neutral") + " " + Number(item.sentiment_score).toFixed(2) + "</span></div>" +
+                    "<div>" + esc(item.headline) + '</div><div class="muted" style="margin-top:6px">' + esc(formatWhen(item.timestamp)) + "</div></a>";
+            }).join("");
+        }
+
+        function renderAdvisor() {
+            const checking = document.getElementById("advisorCheck");
+            const down = document.getElementById("advisorDown");
+            const up = document.getElementById("advisorUp");
+            const chip = document.getElementById("modelChip");
+            const briefBtn = document.getElementById("briefBtn");
+            if (state.health === "online") {
+                checking.hidden = true;
+                down.hidden = true;
+                up.hidden = false;
+                chip.textContent = "Model on";
+                chip.className = "chip on";
+                briefBtn.disabled = false;
+                return;
+            }
+            up.hidden = true;
+            briefBtn.disabled = true;
+            if (state.health === "checking") {
+                checking.hidden = false;
+                down.hidden = true;
+                chip.textContent = "Checking model";
+                chip.className = "chip";
+                return;
+            }
+            checking.hidden = true;
+            down.hidden = false;
+            chip.textContent = "Model off";
+            chip.className = "chip off";
+            const offline = state.health === "offline";
+            document.getElementById("advisorDownCopy").textContent = offline
+                ? "Ollama is not running, so chat is unavailable. Signals, prices, and headlines do not use the model."
+                : "The model check did not answer, so chat stays off. The signal board does not need it.";
+            document.getElementById("briefDown").textContent = offline
+                ? "Market brief unavailable. The brief is written by the local model, and Ollama is not reachable from this app."
+                : "Market brief unavailable until the app can reach Ollama.";
+        }
+
+        function renderAll() {
+            renderSummary();
+            renderSignals();
+            renderSymbolHeader();
+            renderQuotes();
+            renderWatchlist();
+            renderNews();
+            renderAdvisor();
+        }
+
+        function drawChart(rows) {
+            const canvas = document.getElementById("priceChart");
+            const frame = document.getElementById("chartFrame");
+            const width = canvas.clientWidth || frame.clientWidth;
+            const height = canvas.clientHeight || 260;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.max(1, Math.floor(width * dpr));
+            canvas.height = Math.max(1, Math.floor(height * dpr));
+            const ctx = canvas.getContext("2d");
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, width, height);
+            if (!rows.length) return;
+            const pad = { l: 10, r: 74, t: 16, b: 26 };
+            const plotW = Math.max(10, width - pad.l - pad.r);
+            const plotH = Math.max(10, height - pad.t - pad.b);
+            let min = Infinity;
+            let max = -Infinity;
+            rows.forEach(function (row) {
+                min = Math.min(min, row.low, row.close);
+                max = Math.max(max, row.high, row.close);
+            });
+            if (min === max) { min -= 1; max += 1; }
+            const span = max - min;
+            min -= span * 0.08;
+            max += span * 0.08;
+            const y = function (value) { return pad.t + ((max - value) / (max - min)) * plotH; };
+            ctx.strokeStyle = "rgba(44, 56, 51, 0.95)";
+            ctx.fillStyle = "#66756c";
+            ctx.font = "11px IBM Plex Mono, monospace";
+            ctx.textBaseline = "middle";
+            for (let g = 0; g <= 4; g++) {
+                const gy = pad.t + (plotH * g) / 4;
+                ctx.beginPath();
+                ctx.moveTo(pad.l, gy);
+                ctx.lineTo(pad.l + plotW, gy);
+                ctx.stroke();
+                const val = max - ((max - min) * g) / 4;
+                ctx.textAlign = "left";
+                ctx.fillText(val >= 100 ? val.toFixed(1) : val.toFixed(2), pad.l + plotW + 8, gy);
+            }
+            const candles = rows.length <= 160 && rows.every(function (row) { return row.open != null && row.high != null && row.low != null; });
+            if (candles) {
+                const slot = plotW / rows.length;
+                const bodyW = Math.max(2, Math.min(8, slot * 0.62));
+                rows.forEach(function (row, i) {
+                    const cx = pad.l + slot * (i + 0.5);
+                    const up = row.close >= row.open;
+                    ctx.strokeStyle = up ? "#3dbe86" : "#e36b73";
+                    ctx.fillStyle = ctx.strokeStyle;
+                    ctx.beginPath();
+                    ctx.moveTo(cx, y(row.high));
+                    ctx.lineTo(cx, y(row.low));
+                    ctx.stroke();
+                    const top = y(Math.max(row.open, row.close));
+                    const bot = y(Math.min(row.open, row.close));
+                    ctx.fillRect(cx - bodyW / 2, top, bodyW, Math.max(1, bot - top));
+                });
+            } else {
+                const x = function (i) { return pad.l + (rows.length === 1 ? plotW / 2 : (i / (rows.length - 1)) * plotW); };
+                const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + plotH);
+                grad.addColorStop(0, "rgba(224, 177, 90, 0.30)");
+                grad.addColorStop(1, "rgba(224, 177, 90, 0)");
+                ctx.beginPath();
+                rows.forEach(function (row, i) {
+                    const px = x(i);
+                    const py = y(row.close);
+                    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                });
+                ctx.lineTo(x(rows.length - 1), pad.t + plotH);
+                ctx.lineTo(x(0), pad.t + plotH);
+                ctx.closePath();
+                ctx.fillStyle = grad;
+                ctx.fill();
+                ctx.beginPath();
+                rows.forEach(function (row, i) {
+                    const px = x(i);
+                    const py = y(row.close);
+                    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                });
+                ctx.strokeStyle = "#e0b15a";
+                ctx.lineWidth = 1.8;
+                ctx.stroke();
+            }
+            ctx.fillStyle = "#66756c";
+            ctx.textBaseline = "alphabetic";
+            ctx.textAlign = "left";
+            ctx.fillText(formatUtc(rows[0].time), pad.l, height - 8);
+            ctx.textAlign = "right";
+            ctx.fillText(formatUtc(rows[rows.length - 1].time), pad.l + plotW, height - 8);
+        }
+
+        function showChartMessage(text, hasData) {
+            const frame = document.getElementById("chartFrame");
+            document.getElementById("chartStatus").textContent = text;
+            frame.classList.toggle("has-data", !!hasData);
+        }
+
+        function renderChart() {
+            const rows = state.prices.map(function (row) {
+                return {
+                    time: new Date(row.timestamp),
+                    open: Number(row.open),
+                    high: Number(row.high),
+                    low: Number(row.low),
+                    close: Number(row.close)
+                };
+            }).filter(function (row) { return Number.isFinite(row.close) && !Number.isNaN(row.time.getTime()); });
+            const meta = document.getElementById("chartMeta");
+            if (!rows.length) {
+                showChartMessage("No closes stored for " + state.selected + " in the last " + hoursLabel(state.hours) + ".", false);
+                meta.textContent = "The request was /market/prices/" + state.selected + "?hours=" + state.hours + ". Older candles are not drawn.";
+                return;
+            }
+            showChartMessage("", true);
+            drawChart(rows);
+            const spanH = (rows[rows.length - 1].time - rows[0].time) / 36e5;
+            meta.textContent = rows.length + " closes, " + formatUtc(rows[0].time) + " – " + formatUtc(rows[rows.length - 1].time) +
+                " UTC. Requested the last " + hoursLabel(state.hours) + " (" + spanH.toFixed(1) + "h returned).";
+        }
+
+        async function loadPrices(quiet) {
+            const symbol = state.selected;
+            const hours = state.hours;
+            if (!symbol) return;
+            if (!quiet) {
+                showChartMessage("Loading closes for " + symbol + "…", false);
+                document.getElementById("chartMeta").textContent = "";
+            }
             try {
-                const sumRes = await fetch('/market/summary');
-                if (sumRes.ok) {
-                    const sum = await sumRes.json();
-                    document.getElementById('statTracked').textContent = sum.total_tracked;
-                    document.getElementById('statBuys').textContent = sum.strong_buys + sum.buys;
-                    document.getElementById('statSells').textContent = sum.strong_sells + sum.sells;
-                    const sent = sum.overall_sentiment;
-                    document.getElementById('statSentiment').textContent = (sent > 0 ? '+' : '') + sent.toFixed(3);
-                    document.getElementById('statSentimentDesc').textContent = sent > 0.05 ? 'Net Bullish' : (sent < -0.05 ? 'Net Bearish' : 'Neutral Market Mood');
-                }
-
-                const sigRes = await fetch('/market/signals?latest_only=true&limit=100');
-                if (sigRes.ok) {
-                    allSignals = await sigRes.json();
-                    renderSignals();
-                }
-
-                const newsRes = await fetch('/market/news?limit=15');
-                if (newsRes.ok) {
-                    const news = await newsRes.json();
-                    const container = document.getElementById('newsList');
-                    if (news.length === 0) {
-                        container.innerHTML = '<div class="text-center text-slate-500 py-6 text-xs">No recent headlines found.</div>';
-                    } else {
-                        container.innerHTML = news.map(n => `
-                            <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800/80 flex items-start justify-between gap-3 hover:border-slate-700 transition">
-                                <div>
-                                    <a href="${n.url}" target="_blank" class="text-xs font-medium text-slate-200 hover:text-emerald-400 transition leading-snug line-clamp-2">${n.headline}</a>
-                                    <div class="flex items-center gap-2 mt-1.5 text-[10px] text-slate-500 font-mono">
-                                        <span class="text-slate-400">${n.source || 'WIRE'}</span>
-                                        <span>•</span>
-                                        <span>${new Date(n.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                    </div>
-                                </div>
-                                <span class="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold font-mono ${n.sentiment_label === 'Bullish' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : (n.sentiment_label === 'Bearish' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' : 'bg-slate-800 text-slate-400')}">
-                                    ${n.sentiment_label} (${n.sentiment_score > 0 ? '+' : ''}${n.sentiment_score.toFixed(2)})
-                                </span>
-                            </div>
-                        `).join('');
-                    }
-                }
+                const res = await fetch("/market/prices/" + encodeURIComponent(symbol) + "?hours=" + hours);
+                const rows = await readJson(res);
+                if (state.selected !== symbol || state.hours !== hours) return;
+                state.prices = Array.isArray(rows) ? rows : [];
+                renderChart();
             } catch (err) {
-                console.error(err);
-            } finally {
-                setTimeout(() => icon.classList.remove('fa-spin'), 600);
+                if (state.selected !== symbol || state.hours !== hours) return;
+                state.prices = [];
+                showChartMessage("Price history did not load. " + err.message, false);
             }
         }
 
-        async function generateReport() {
-            const btn = document.getElementById('reportBtn');
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Generating Briefing...';
-            btn.disabled = true;
+        async function loadQuotes() {
+            const symbol = state.selected;
+            if (!symbol) return;
+            state.quotesStatus = "loading";
+            state.quotes = [];
+            renderQuotes();
             try {
-                const res = await fetch('/market/report', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ report_type: 'daily' })
-                });
-                if (res.ok) {
+                const res = await fetch("/market/quotes/" + encodeURIComponent(symbol));
+                const data = await readJson(res);
+                if (state.selected !== symbol) return;
+                state.quotes = data.quotes || [];
+                state.quotesStatus = "ready";
+            } catch (err) {
+                if (state.selected !== symbol) return;
+                state.quotesStatus = "error";
+            }
+            renderQuotes();
+        }
+
+        function selectSymbol(symbol) {
+            if (!symbol || symbol === state.selected) {
+                state.selected = symbol;
+                renderSignals();
+                renderSymbolHeader();
+                return;
+            }
+            state.selected = symbol;
+            renderSignals();
+            renderSymbolHeader();
+            loadPrices();
+            loadQuotes();
+        }
+
+        async function loadBoard(options) {
+            const quiet = options && options.quiet;
+            const banner = document.getElementById("pageError");
+            try {
+                const results = await Promise.all([
+                    fetch("/market/summary"),
+                    fetch("/market/signals?latest_only=true&limit=100"),
+                    fetch("/market/news?limit=40"),
+                    fetch("/market/watchlist")
+                ]);
+                const summaryOk = results[0].ok;
+                const signalsOk = results[1].ok;
+                const newsOk = results[2].ok;
+                const watchOk = results[3].ok;
+                if (summaryOk) state.summary = await results[0].json();
+                if (signalsOk) state.signals = await results[1].json();
+                if (newsOk) state.news = await results[2].json();
+                if (watchOk) {
+                    state.watchlist = await results[3].json();
+                    state.watchOk = true;
+                }
+                state.boardOk = signalsOk || newsOk || summaryOk;
+                if (!summaryOk && !signalsOk) {
+                    banner.hidden = false;
+                    banner.textContent = "The scanner did not respond. Refresh, or check that finance-ai.service is running.";
+                } else {
+                    banner.hidden = true;
+                    const misses = [];
+                    if (!signalsOk) misses.push("signals");
+                    if (!newsOk) misses.push("headlines");
+                    if (!watchOk) misses.push("watchlist");
+                    if (misses.length) {
+                        banner.hidden = false;
+                        banner.textContent = "Part of the scan did not load: " + misses.join(", ") + ". The rest of the page is still here.";
+                    }
+                }
+                if (!state.selected) {
+                    const first = visibleSignals()[0];
+                    if (first) state.selected = first.symbol;
+                }
+                renderAll();
+                if (state.selected) {
+                    loadPrices(quiet);
+                    if (!quiet) loadQuotes();
+                }
+            } catch (err) {
+                banner.hidden = false;
+                banner.textContent = "The scanner did not respond. Refresh, or check that finance-ai.service is running.";
+                if (!state.boardOk) {
+                    document.getElementById("signalBody").innerHTML = '<tr><td colspan="6" class="empty">The signal list did not load.</td></tr>';
+                    document.getElementById("signalCards").innerHTML = '<p class="empty">The signal list did not load.</p>';
+                    document.getElementById("newsList").innerHTML = '<p class="empty">Headlines did not load.</p>';
+                }
+            }
+        }
+
+        async function loadHealth() {
+            try {
+                const res = await fetch("/health");
+                if (!res.ok) {
+                    state.health = "unreachable";
+                } else {
                     const data = await res.json();
-                    document.getElementById('reportContainer').classList.remove('hidden');
-                    document.getElementById('reportContent').textContent = data.report;
-                    document.getElementById('reportTime').textContent = new Date(data.generated_at).toLocaleTimeString();
-                    document.getElementById('reportContainer').scrollIntoView({ behavior: 'smooth' });
+                    state.health = data.status === "ok" ? "online" : "offline";
                 }
-            } catch (e) {
-                alert('Report generation failed: ' + e);
-            } finally {
-                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> AI Market Brief';
-                btn.disabled = false;
-            }
-        }
-
-        function quickPrompt(text) {
-            document.getElementById('chatInput').value = text;
-            document.getElementById('chatBtn').click();
-        }
-
-        async function sendChat(e) {
-            e.preventDefault();
-            const input = document.getElementById('chatInput');
-            const msg = input.value.trim();
-            if (!msg) return;
-
-            const hist = document.getElementById('chatHistory');
-            hist.innerHTML += `
-                <div class="bg-emerald-950/50 border border-emerald-800/50 p-3 rounded-2xl text-emerald-200 text-xs self-end text-right ml-6 shadow-sm">
-                    ${msg}
-                </div>
-            `;
-            input.value = '';
-            hist.scrollTop = hist.scrollHeight;
-
-            const loadId = 'load-' + Date.now();
-            hist.innerHTML += `
-                <div id="${loadId}" class="bg-slate-900/90 p-3 rounded-2xl text-slate-400 text-xs border border-slate-800 mr-6 flex items-center gap-2">
-                    <i class="fa-solid fa-circle-notch fa-spin text-emerald-400"></i> Thinking on RTX 4060 GPU...
-                </div>
-            `;
-            hist.scrollTop = hist.scrollHeight;
-
-            try {
-                const res = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: msg })
-                });
-                const data = await res.json();
-                document.getElementById(loadId).remove();
-                hist.innerHTML += `
-                    <div class="bg-slate-900/90 p-3.5 rounded-2xl text-slate-200 border border-slate-800 mr-4 text-xs leading-relaxed whitespace-pre-line shadow-sm">
-                        ${data.reply}
-                    </div>
-                `;
-                hist.scrollTop = hist.scrollHeight;
             } catch (err) {
-                document.getElementById(loadId).remove();
-                hist.innerHTML += `
-                    <div class="bg-rose-950/40 border border-rose-800/40 p-3 rounded-2xl text-rose-300 text-xs mr-4">
-                        Failed to reach AI: ${err}
-                    </div>
-                `;
+                state.health = "unreachable";
             }
+            renderAdvisor();
         }
 
-        fetchData();
-        setInterval(fetchData, 30000);
+        document.getElementById("marketFilter").addEventListener("click", function (event) {
+            const button = event.target.closest("button[data-market]");
+            if (!button) return;
+            state.filter = button.dataset.market;
+            document.querySelectorAll("#marketFilter button").forEach(function (item) {
+                item.setAttribute("aria-pressed", item === button ? "true" : "false");
+            });
+            renderSignals();
+        });
+
+        document.getElementById("newsFilter").addEventListener("click", function (event) {
+            const button = event.target.closest("button[data-source]");
+            if (!button) return;
+            state.newsSource = button.dataset.source;
+            document.querySelectorAll("#newsFilter button").forEach(function (item) {
+                item.setAttribute("aria-pressed", item === button ? "true" : "false");
+            });
+            renderNews();
+        });
+
+        document.getElementById("signalBoard").addEventListener("click", function (event) {
+            const row = event.target.closest("[data-symbol]");
+            if (!row || !document.getElementById("signalBoard").contains(row)) return;
+            selectSymbol(row.dataset.symbol);
+        });
+        document.getElementById("signalBoard").addEventListener("keydown", function (event) {
+            if (event.key !== "Enter") return;
+            const row = event.target.closest("tr[data-symbol]");
+            if (!row) return;
+            selectSymbol(row.dataset.symbol);
+        });
+
+        document.getElementById("windows").addEventListener("click", function (event) {
+            const button = event.target.closest("button[data-hours]");
+            if (!button) return;
+            state.hours = Number(button.dataset.hours);
+            document.querySelectorAll("#windows button").forEach(function (item) {
+                item.setAttribute("aria-pressed", item === button ? "true" : "false");
+            });
+            loadPrices();
+        });
+
+        document.getElementById("watchList").addEventListener("click", async function (event) {
+            const remove = event.target.closest("[data-remove]");
+            if (remove) {
+                const symbol = remove.dataset.remove;
+                remove.disabled = true;
+                try {
+                    const res = await fetch("/market/watchlist/" + encodeURIComponent(symbol), { method: "DELETE" });
+                    await readJson(res);
+                    document.getElementById("watchMsg").textContent = "Removed " + symbol + ".";
+                    await loadBoard();
+                } catch (err) {
+                    document.getElementById("watchMsg").textContent = "Could not remove " + symbol + ".";
+                    remove.disabled = false;
+                }
+                return;
+            }
+            const open = event.target.closest("[data-symbol]");
+            if (open) selectSymbol(open.dataset.symbol);
+        });
+
+        document.getElementById("addForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const symbol = document.getElementById("addSymbol").value.trim().toUpperCase();
+            const name = document.getElementById("addName").value.trim() || symbol;
+            const market = document.getElementById("addMarket").value;
+            const msg = document.getElementById("watchMsg");
+            if (!/^[A-Z0-9.=^-]{1,20}$/.test(symbol)) {
+                msg.textContent = "Use a ticker such as AMD, PETR4.SA, or EURUSD=X.";
+                return;
+            }
+            document.getElementById("addBtn").disabled = true;
+            try {
+                const res = await fetch("/market/watchlist", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ symbol: symbol, market: market, display_name: name })
+                });
+                await readJson(res);
+                msg.textContent = symbol + " is on the list. The next scan will fetch it.";
+                document.getElementById("addSymbol").value = "";
+                document.getElementById("addName").value = "";
+                await loadBoard();
+            } catch (err) {
+                msg.textContent = "Could not add " + symbol + ".";
+            } finally {
+                document.getElementById("addBtn").disabled = false;
+            }
+        });
+
+        document.getElementById("refreshBtn").addEventListener("click", function () {
+            loadBoard();
+            loadHealth();
+        });
+
+        document.getElementById("briefBtn").addEventListener("click", async function () {
+            if (state.health !== "online") return;
+            const slot = document.getElementById("briefUp");
+            const button = document.getElementById("briefBtn");
+            button.disabled = true;
+            slot.hidden = false;
+            slot.textContent = "Writing the brief…";
+            try {
+                const res = await fetch("/market/report", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ report_type: "daily" })
+                });
+                const data = await readJson(res);
+                slot.textContent = data.report || "The model returned an empty brief.";
+            } catch (err) {
+                slot.textContent = "The brief did not generate. " + err.message;
+            } finally {
+                button.disabled = state.health !== "online";
+            }
+        });
+
+        document.getElementById("chatForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            if (state.health !== "online") return;
+            const input = document.getElementById("chatInput");
+            const message = input.value.trim();
+            if (!message) return;
+            const log = document.getElementById("chatLog");
+            const user = document.createElement("div");
+            user.className = "bubble user";
+            user.textContent = message;
+            log.appendChild(user);
+            input.value = "";
+            const pending = document.createElement("div");
+            pending.className = "bubble assistant";
+            pending.textContent = "Waiting for the model…";
+            log.appendChild(pending);
+            try {
+                const res = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: message, use_rag: false })
+                });
+                const data = await readJson(res);
+                pending.textContent = data.reply || "The model returned an empty reply.";
+            } catch (err) {
+                pending.textContent = "Chat is unavailable. " + err.message;
+            }
+        });
+
+        window.addEventListener("resize", function () {
+            if (state.prices.length) renderChart();
+        });
+
+        renderAll();
+        loadBoard();
+        loadHealth();
+        setInterval(function () { loadBoard({ quiet: true }); loadHealth(); }, 30000);
     </script>
 </body>
 </html>

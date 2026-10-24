@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-import email.utils
+import re
 from typing import Callable, List, Optional
 import feedparser
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -22,32 +22,50 @@ NEWS_FEEDS = {
     ],
 }
 
+# Keywords per symbol. Matching uses word boundaries, and short all-caps tickers
+# (e.g. "ETH", "SOL", "ADA") are matched case-sensitively so ordinary words like
+# "method", "solution" or "Canada" don't get tagged.
 COMPANY_MAP = {
-    "AAPL": ["Apple", "AAPL", "iPhone", "Mac"],
-    "MSFT": ["Microsoft", "MSFT", "Windows", "Azure"],
-    "NVDA": ["Nvidia", "NVDA", "GeForce", "AI chip"],
+    "AAPL": ["Apple", "AAPL", "iPhone"],
+    "MSFT": ["Microsoft", "MSFT", "Azure"],
+    "NVDA": ["Nvidia", "NVDA", "GeForce"],
     "TSLA": ["Tesla", "TSLA", "Elon Musk"],
     "AMZN": ["Amazon", "AMZN", "AWS"],
     "GOOGL": ["Google", "Alphabet", "GOOGL"],
-    "META": ["Meta", "Facebook", "Instagram"],
+    "META": ["Meta Platforms", "Facebook", "Instagram", "META"],
     "SPY": ["S&P 500", "SPY", "Wall Street", "Federal Reserve", "Fed"],
-    "QQQ": ["Nasdaq", "QQQ", "Tech stocks"],
-    "BTCUSDT": ["Bitcoin", "BTC", "crypto"],
+    "QQQ": ["Nasdaq", "QQQ"],
+    "BTCUSDT": ["Bitcoin", "BTC"],
     "ETHUSDT": ["Ethereum", "ETH", "Ether"],
     "SOLUSDT": ["Solana", "SOL"],
-    "BNBUSDT": ["Binance", "BNB"],
+    "BNBUSDT": ["BNB", "Binance Coin"],
     "XRPUSDT": ["Ripple", "XRP"],
     "ADAUSDT": ["Cardano", "ADA"],
     "DOGEUSDT": ["Dogecoin", "DOGE"],
-    "EURUSD=X": ["Euro", "EUR/USD", "ECB"],
-    "GBPUSD=X": ["Pound", "GBP/USD", "Bank of England"],
-    "USDJPY=X": ["Yen", "USD/JPY", "Bank of Japan"],
-    "PETR4.SA": ["Petrobras", "PETR4", "petr?leo"],
-    "VALE3.SA": ["Vale", "VALE3", "min?rio de ferro"],
-    "ITUB4.SA": ["Ita?", "ITUB4"],
+    "EURUSD=X": ["EUR/USD", "ECB", "European Central Bank"],
+    "GBPUSD=X": ["GBP/USD", "Bank of England", "sterling"],
+    "USDJPY=X": ["USD/JPY", "Bank of Japan", "BOJ", "yen"],
+    "PETR4.SA": ["Petrobras", "PETR4", "PETR3"],
+    "VALE3.SA": ["VALE3", "Vale S.A.", "mineradora Vale", "Vale (VALE3)"],
+    "ITUB4.SA": ["Itaú", "Itau Unibanco", "ITUB4"],
     "BBDC4.SA": ["Bradesco", "BBDC4"],
     "ABEV3.SA": ["Ambev", "ABEV3"],
 }
+
+
+def _compile_patterns(company_map):
+    patterns = {}
+    for symbol, keywords in company_map.items():
+        compiled = []
+        for kw in keywords:
+            case_sensitive = kw.isupper() and len(kw) <= 5
+            flags = 0 if case_sensitive else re.IGNORECASE
+            compiled.append(re.compile(r"(?<!\w)" + re.escape(kw) + r"(?!\w)", flags))
+        patterns[symbol] = compiled
+    return patterns
+
+
+_PATTERNS = _compile_patterns(COMPANY_MAP)
 
 analyzer = SentimentIntensityAnalyzer()
 
@@ -62,14 +80,8 @@ def score_sentiment(text: str) -> float:
 
 def tag_symbols(headline: str, summary: str = "") -> List[str]:
     """Find all watchlist symbols mentioned in text."""
-    full_text = f"{headline} {summary}".lower()
-    matched: List[str] = []
-    for symbol, keywords in COMPANY_MAP.items():
-        for kw in keywords:
-            if kw.lower() in full_text:
-                matched.append(symbol)
-                break
-    return matched
+    full_text = f"{headline} {summary}"
+    return [sym for sym, pats in _PATTERNS.items() if any(p.search(full_text) for p in pats)]
 
 
 def fetch_news() -> List[NewsItem]:

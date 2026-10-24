@@ -94,7 +94,9 @@ class SignalResponse(BaseModel):
     current_price: float
     rsi: Optional[float] = None
     macd: Optional[float] = None
-    win_rate: Optional[float] = None
+    win_rate: Optional[float] = None  # backtested hit rate (%); None = not enough evidence
+    sentiment: Optional[float] = None
+    is_entry: bool = False
 
 
 class NewsItemResponse(BaseModel):

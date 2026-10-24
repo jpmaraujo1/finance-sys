@@ -28,8 +28,8 @@
             <div>
                 <div class="flex items-center gap-2">
                     <span class="font-extrabold text-lg tracking-tight text-white">Finance AI</span>
-                    <span class="text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> RTX 4060 GPU
+                    <span id="engineStatus" class="text-[10px] font-mono font-bold bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full flex items-center gap-1.5">
+                        <span id="engineDot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> <span id="engineText">Engine: checking…</span>
                     </span>
                 </div>
                 <p class="text-xs text-slate-400">24/7 Confluence Signal Engine & Quantitative Advisor</p>
@@ -52,9 +52,9 @@
         <div class="card p-6 rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-slate-900/90 to-slate-950/90 shadow-2xl relative">
             <button onclick="toggleGuide()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             <h3 class="text-base font-bold text-cyan-400 flex items-center gap-2 mb-4">
-                <i class="fa-solid fa-graduation-cap"></i> How to Read & Profit from These Signals
+                <i class="fa-solid fa-graduation-cap"></i> How to Read These Signals
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs text-slate-300 leading-relaxed font-sans">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 text-xs text-slate-300 leading-relaxed font-sans">
                 <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
                     <p class="font-bold text-emerald-400 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-gauge-high"></i> RSI (Relative Strength Index)</p>
                     <p class="text-slate-400 mb-2">Measures price momentum on a 0–100 scale:</p>
@@ -77,8 +77,17 @@
                     <p class="font-bold text-amber-400 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-shield-halved"></i> Why 'HOLD' when Oversold?</p>
                     <p class="text-slate-400 mb-2">The system avoids catching falling knives:</p>
                     <p class="text-[11px] text-slate-300">
-                        Even if an asset's RSI drops below 30, if the MACD momentum is still plummeting, the system triggers <strong>HOLD</strong> to protect you. It only fires <strong>BUY</strong> when multiple indicators align (RSI bottoming + MACD reversal + volume support).
+                        Even if an asset's RSI drops below 30, if the MACD momentum is still plummeting, the system triggers <strong>HOLD</strong>. It only fires <strong>BUY</strong> when multiple indicators align (RSI bottoming + MACD reversal + volume support).
                     </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <p class="font-bold text-violet-400 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-scale-balanced"></i> Rule score vs hit rate</p>
+                    <p class="text-slate-400 mb-2">Two different numbers:</p>
+                    <ul class="space-y-1 text-[11px]">
+                        <li>• <span class="text-slate-200 font-bold">Rule score:</span> how many indicators agree. It is <em>not</em> a probability.</li>
+                        <li>• <span class="text-slate-200 font-bold">Hit rate:</span> how often this signal type was actually profitable after costs, measured on history. "Unproven" means too few cases to say.</li>
+                        <li>• <span class="text-slate-200 font-bold">Edge vs long:</span> did it beat simply holding? That is the number that matters.</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -101,7 +110,7 @@
                         <i class="fa-solid fa-arrow-trend-up text-emerald-400"></i>
                     </div>
                     <p class="text-2xl font-black text-emerald-400 mt-1 font-mono" id="statBuys">--</p>
-                    <span class="text-[10px] text-emerald-500/80 font-medium">Confluence Triggered</span>
+                    <span class="text-[10px] text-emerald-500/80 font-medium">Confluence triggered</span>
                 </div>
                 <div class="card p-4 rounded-xl border-l-4 border-rose-500">
                     <div class="flex items-center justify-between text-slate-400 text-xs">
@@ -109,7 +118,7 @@
                         <i class="fa-solid fa-arrow-trend-down text-rose-400"></i>
                     </div>
                     <p class="text-2xl font-black text-rose-400 mt-1 font-mono" id="statSells">--</p>
-                    <span class="text-[10px] text-rose-500/80 font-medium">Overextended Risk</span>
+                    <span class="text-[10px] text-rose-500/80 font-medium">Bearish confluence</span>
                 </div>
                 <div class="card p-4 rounded-xl border-l-4 border-cyan-500">
                     <div class="flex items-center justify-between text-slate-400 text-xs">
@@ -166,15 +175,46 @@
                                 <th class="py-3 px-3">Price</th>
                                 <th class="py-3 px-3">Signal</th>
                                 <th class="py-3 px-3">RSI</th>
-                                <th class="py-3 px-3">Confidence</th>
+                                <th class="py-3 px-3" title="How many indicators agree. Not a probability.">Rule score</th>
+                                <th class="py-3 px-3" title="Backtested share of these signals that were profitable after costs">Hit rate</th>
                                 <th class="py-3 px-4">Key Indicator Drivers</th>
                             </tr>
                         </thead>
                         <tbody id="signalsTable" class="divide-y divide-slate-800/60 text-xs">
-                            <tr><td colspan="6" class="py-8 text-center text-slate-500 font-mono">Loading market intelligence...</td></tr>
+                            <tr><td colspan="7" class="py-8 text-center text-slate-500 font-mono">Loading market intelligence...</td></tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <div class="card rounded-2xl p-5" id="trackRecordCard">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="font-bold text-base text-white flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-check text-violet-400"></i> Track Record
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5" id="trackSubtitle">How signals performed after they were issued, net of trading costs</p>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 p-1 bg-slate-900/80 rounded-xl border border-slate-800" id="trackTabs"></div>
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900/80 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                                <th class="py-2.5 px-4">Signal</th>
+                                <th class="py-2.5 px-3" title="Independent signals (repeats of the same signal are not counted)">Signals</th>
+                                <th class="py-2.5 px-3" title="Share that made money after costs">Hit rate</th>
+                                <th class="py-2.5 px-3" title="Average return per signal after costs">Avg net</th>
+                                <th class="py-2.5 px-3" title="Return compared with simply holding the asset over the same period">Edge vs long</th>
+                                <th class="py-2.5 px-3" title="Above ~2 suggests the edge is unlikely to be luck">t-stat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trackTable" class="divide-y divide-slate-800/60 text-xs">
+                            <tr><td colspan="6" class="py-6 text-center text-slate-500 font-mono">Loading track record...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-3 leading-relaxed" id="trackFootnote"></p>
             </div>
 
             <div class="card rounded-2xl p-5">
@@ -204,7 +244,7 @@
                             <h2 class="font-bold text-sm text-white flex items-center gap-2">
                                 AI Quantitative Advisor
                             </h2>
-                            <p class="text-[10px] text-slate-400">100% Offline • RTX 4060 Accelerated</p>
+                            <p class="text-[10px] text-slate-400">100% offline • runs on your own hardware</p>
                         </div>
                     </div>
                     <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-full">LLaMA 3.1 8B</span>
@@ -242,6 +282,36 @@
     <script>
         let allSignals = [];
         let currentFilter = 'all';
+        let performance = null;
+        let backtestRows = [];
+        let currentTrack = 'backtest';
+
+        // Escape anything that came from outside (RSS feeds, the LLM, the user) before it touches innerHTML
+        function esc(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+        }
+        function safeUrl(url) {
+            return /^https?:\/\//i.test(url || '') ? esc(url) : '#';
+        }
+
+        // fetch() wrapper that sends the API key (if the server requires one) and asks for it on 401
+        function getApiKey() {
+            try { return localStorage.getItem('financeApiKey') || ''; } catch (e) { return ''; }
+        }
+        async function api(url, options = {}, retried = false) {
+            const headers = Object.assign({}, options.headers || {});
+            const key = getApiKey();
+            if (key) headers['X-API-Key'] = key;
+            const res = await fetch(url, Object.assign({}, options, { headers }));
+            if (res.status === 401 && !retried) {
+                const entered = prompt('This dashboard is protected. Enter the API key (API_KEY in your .env):');
+                if (entered) {
+                    try { localStorage.setItem('financeApiKey', entered.trim()); } catch (e) {}
+                    return api(url, options, true);
+                }
+            }
+            return res;
+        }
 
         function toggleGuide() {
             const el = document.getElementById('guideSection');
@@ -254,8 +324,11 @@
                 btn.classList.remove('bg-slate-800', 'text-white');
                 btn.classList.add('text-slate-400');
             });
-            event.target.classList.add('bg-slate-800', 'text-white');
-            event.target.classList.remove('text-slate-400');
+            const btn = event && event.target ? event.target.closest('button') : null;
+            if (btn) {
+                btn.classList.add('bg-slate-800', 'text-white');
+                btn.classList.remove('text-slate-400');
+            }
             renderSignals();
         }
 
@@ -286,6 +359,116 @@
             }
         }
 
+        function getHitRateBadge(s) {
+            if (s.signal_type === 'HOLD') return '<span class="text-slate-600">–</span>';
+            if (s.win_rate === null || s.win_rate === undefined) {
+                return '<span class="text-[10px] text-amber-400/80" title="Fewer than the minimum number of historical cases">unproven</span>';
+            }
+            const v = Number(s.win_rate);
+            const cls = v >= 55 ? 'text-emerald-400' : (v >= 50 ? 'text-slate-300' : 'text-rose-400');
+            return `<span class="font-mono text-[11px] ${cls}">${v.toFixed(1)}%</span>`;
+        }
+
+        function fmtPct(v, digits = 3) {
+            if (v === null || v === undefined || Number.isNaN(v)) return '–';
+            const n = Number(v);
+            const cls = n > 0 ? 'text-emerald-400' : (n < 0 ? 'text-rose-400' : 'text-slate-400');
+            return `<span class="font-mono ${cls}">${n > 0 ? '+' : ''}${n.toFixed(digits)}%</span>`;
+        }
+
+        function horizonLabel(min) {
+            return min % 1440 === 0 ? `${min / 1440}d` : (min % 60 === 0 ? `${min / 60}h` : `${min}m`);
+        }
+
+        // Combine per-symbol backtest rows into one row per signal type (weighted by number of signals)
+        function poolBacktest(rows) {
+            const order = ['STRONG_BUY', 'BUY', 'SELL', 'STRONG_SELL'];
+            const out = [];
+            for (const st of order) {
+                const r = rows.filter(x => x.signal_type === st && x.n_entries);
+                const n = r.reduce((a, x) => a + x.n_entries, 0);
+                if (!n) continue;
+                const w = f => r.reduce((a, x) => a + (x[f] || 0) * x.n_entries, 0) / n;
+                out.push({ signal_type: st, n, hit_rate: w('hit_rate'), avg_net_pct: w('avg_net_pct'),
+                           edge_vs_long_pct: w('edge_vs_long_pct'), t_stat: null, enough_data: n >= 20 });
+            }
+            return out;
+        }
+
+        function renderTrackTabs() {
+            const tabs = [{ id: 'backtest', label: 'Backtest' }];
+            (performance?.horizons || []).forEach(h => tabs.push({ id: `live-${h.horizon_min}`, label: `Live ${horizonLabel(h.horizon_min)}` }));
+            if (!tabs.find(t => t.id === currentTrack)) currentTrack = 'backtest';
+            document.getElementById('trackTabs').innerHTML = tabs.map(t => `
+                <button onclick="selectTrack('${t.id}')" class="px-2.5 py-1 rounded-lg text-xs font-medium transition ${t.id === currentTrack ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}">${t.label}</button>
+            `).join('');
+        }
+
+        function selectTrack(id) {
+            currentTrack = id;
+            renderTrackRecord();
+        }
+
+        function renderTrackRecord() {
+            renderTrackTabs();
+            const tbody = document.getElementById('trackTable');
+            const foot = document.getElementById('trackFootnote');
+            const sub = document.getElementById('trackSubtitle');
+            let rows = [];
+            if (currentTrack === 'backtest') {
+                rows = poolBacktest(backtestRows);
+                const computed = backtestRows.length ? backtestRows.map(r => r.computed_at).sort().pop() : null;
+                const strat = backtestRows.filter(r => r.signal_type === 'STRATEGY');
+                sub.textContent = 'Walk-forward backtest on stored history (1h holding period), all assets pooled, net of costs';
+                let stratText = '';
+                if (strat.length) {
+                    const beat = strat.filter(r => r.strategy_return_pct > r.buy_hold_return_pct).length;
+                    stratText = ` Following the signals long-only beat buy & hold on ${beat} of ${strat.length} assets.`;
+                }
+                foot.textContent = (computed ? `Last computed ${new Date(computed).toLocaleString()}.` : 'No backtest yet: run the backfill so there is history to test on.') + stratText +
+                    ' Backtests can flatter rules that were designed while looking at past charts; the live tabs are the real test.';
+            } else {
+                const minutes = Number(currentTrack.split('-')[1]);
+                const h = (performance?.horizons || []).find(x => x.horizon_min === minutes);
+                rows = (h?.by_signal_type || []).map(r => Object.assign({}, r));
+                const since = performance?.tracking_since ? new Date(performance.tracking_since).toLocaleDateString() : '–';
+                sub.textContent = `Live signals graded ${horizonLabel(minutes)} after they were issued, net of costs`;
+                foot.textContent = `Tracking since ${since}. ${h ? h.graded : 0} signals graded at this horizon. ` +
+                    `Rows with fewer than ${performance?.min_samples ?? 20} signals are dimmed: too few to draw conclusions.`;
+            }
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-500 font-mono">No graded signals yet. Check back after the engine has run for a while.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = rows.map(r => `
+                <tr class="${r.enough_data ? '' : 'opacity-50'}">
+                    <td class="py-2.5 px-4">${getSignalBadge(r.signal_type).replace('flex items-center', 'inline-flex items-center')}</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-300">${r.n}</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-200">${Number(r.hit_rate).toFixed(1)}%</td>
+                    <td class="py-2.5 px-3">${fmtPct(r.avg_net_pct)}</td>
+                    <td class="py-2.5 px-3">${fmtPct(r.edge_vs_long_pct)}</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-400">${r.t_stat ?? '–'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderEngineStatus(health) {
+            const dot = document.getElementById('engineDot');
+            const text = document.getElementById('engineText');
+            const pill = document.getElementById('engineStatus');
+            const eng = health?.engine || {};
+            pill.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded-full flex items-center gap-1.5 border ';
+            if (eng.running) {
+                pill.className += 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+                text.textContent = `Engine live · ${Math.round(eng.minutes_since_last_cycle)}m ago`;
+            } else {
+                pill.className += 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
+                text.textContent = eng.last_cycle ? `Engine stalled · last ${new Date(eng.last_cycle).toLocaleTimeString()}` : 'Engine not started';
+            }
+        }
+
         function formatPrice(symbol, price) {
             if (symbol.includes('.SA')) return `R$ ${price.toFixed(2)}`;
             if (symbol.includes('=X')) return `${price.toFixed(4)}`;
@@ -301,38 +484,40 @@
             }
 
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500 font-mono">No signals found matching this filter.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500 font-mono">No signals found matching this filter.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = filtered.map(s => {
                 const reasonsList = s.reasons.map(r => {
+                    const lr = r.toLowerCase();
                     let badgeClass = "bg-slate-800 text-slate-300 border-slate-700";
-                    if (r.toLowerCase().includes('oversold') || r.toLowerCase().includes('bullish') || r.toLowerCase().includes('buying')) {
+                    if (lr.includes('oversold') || lr.includes('above signal') || lr.includes('buying') || lr.includes('above ema21') || lr.includes('lower bollinger') || lr.includes('is positive')) {
                         badgeClass = "bg-emerald-950/40 text-emerald-300 border-emerald-800/40";
-                    } else if (r.toLowerCase().includes('negative') || r.toLowerCase().includes('below signal') || r.toLowerCase().includes('overbought')) {
+                    } else if (lr.includes('negative') || lr.includes('below signal') || lr.includes('overbought') || lr.includes('below ema21') || lr.includes('upper bollinger') || lr.includes('selloff')) {
                         badgeClass = "bg-rose-950/40 text-rose-300 border-rose-800/40";
                     }
-                    return `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium border ${badgeClass} mr-1 mb-1">${r}</span>`;
+                    return `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-medium border ${badgeClass} mr-1 mb-1">${esc(r)}</span>`;
                 }).join('');
 
                 return `
                     <tr class="hover:bg-slate-800/30 transition border-b border-slate-800/60">
                         <td class="py-3 px-4">
-                            <div class="font-bold text-white tracking-tight">${s.symbol}</div>
-                            <div class="text-[11px] text-slate-400">${s.display_name || s.symbol} <span class="text-[9px] uppercase px-1 rounded bg-slate-800 text-slate-500 ml-1">${s.market.replace('_', ' ')}</span></div>
+                            <div class="font-bold text-white tracking-tight flex items-center gap-1.5">${esc(s.symbol)}${s.is_entry && s.signal_type !== 'HOLD' ? '<span class="text-[9px] px-1 rounded bg-violet-500/20 text-violet-300 border border-violet-500/30" title="Signal changed on the latest candle">NEW</span>' : ''}</div>
+                            <div class="text-[11px] text-slate-400">${esc(s.display_name || s.symbol)} <span class="text-[9px] uppercase px-1 rounded bg-slate-800 text-slate-500 ml-1">${s.market.replace('_', ' ')}</span></div>
                         </td>
                         <td class="py-3 px-3 font-mono font-semibold text-slate-200">${formatPrice(s.symbol, s.current_price)}</td>
                         <td class="py-3 px-3">${getSignalBadge(s.signal_type)}</td>
                         <td class="py-3 px-3">${getRsiBadge(s.rsi)}</td>
                         <td class="py-3 px-3">
                             <div class="flex items-center gap-2">
-                                <span class="font-mono text-[11px] text-slate-300">${s.confidence}%</span>
+                                <span class="font-mono text-[11px] text-slate-300">${Math.round(s.confidence)}</span>
                                 <div class="w-12 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                                    <div class="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full" style="width: ${s.confidence}%"></div>
+                                    <div class="h-full bg-gradient-to-r from-slate-500 to-slate-300 rounded-full" style="width: ${Math.max(0, Math.min(100, s.confidence))}%"></div>
                                 </div>
                             </div>
                         </td>
+                        <td class="py-3 px-3">${getHitRateBadge(s)}</td>
                         <td class="py-3 px-4 max-w-md">
                             <div class="flex flex-wrap">${reasonsList}</div>
                         </td>
@@ -345,7 +530,9 @@
             const icon = document.getElementById('refreshIcon');
             icon.classList.add('fa-spin');
             try {
-                const sumRes = await fetch('/market/summary');
+                api('/health').then(r => r.ok ? r.json() : null).then(renderEngineStatus).catch(() => {});
+
+                const sumRes = await api('/market/summary');
                 if (sumRes.ok) {
                     const sum = await sumRes.json();
                     document.getElementById('statTracked').textContent = sum.total_tracked;
@@ -356,13 +543,18 @@
                     document.getElementById('statSentimentDesc').textContent = sent > 0.05 ? 'Net Bullish' : (sent < -0.05 ? 'Net Bearish' : 'Neutral Market Mood');
                 }
 
-                const sigRes = await fetch('/market/signals?latest_only=true&limit=100');
+                const sigRes = await api('/market/signals?latest_only=true&limit=100');
                 if (sigRes.ok) {
                     allSignals = await sigRes.json();
                     renderSignals();
                 }
 
-                const newsRes = await fetch('/market/news?limit=15');
+                const [perfRes, btRes] = await Promise.all([api('/market/performance'), api('/market/backtest')]);
+                if (perfRes.ok) performance = await perfRes.json();
+                if (btRes.ok) backtestRows = await btRes.json();
+                renderTrackRecord();
+
+                const newsRes = await api('/market/news?limit=15');
                 if (newsRes.ok) {
                     const news = await newsRes.json();
                     const container = document.getElementById('newsList');
@@ -372,15 +564,15 @@
                         container.innerHTML = news.map(n => `
                             <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800/80 flex items-start justify-between gap-3 hover:border-slate-700 transition">
                                 <div>
-                                    <a href="${n.url}" target="_blank" class="text-xs font-medium text-slate-200 hover:text-emerald-400 transition leading-snug line-clamp-2">${n.headline}</a>
+                                    <a href="${safeUrl(n.url)}" target="_blank" rel="noopener noreferrer" class="text-xs font-medium text-slate-200 hover:text-emerald-400 transition leading-snug line-clamp-2">${esc(n.headline)}</a>
                                     <div class="flex items-center gap-2 mt-1.5 text-[10px] text-slate-500 font-mono">
-                                        <span class="text-slate-400">${n.source || 'WIRE'}</span>
+                                        <span class="text-slate-400">${esc(n.source || 'WIRE')}</span>
                                         <span>•</span>
                                         <span>${new Date(n.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                     </div>
                                 </div>
                                 <span class="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold font-mono ${n.sentiment_label === 'Bullish' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : (n.sentiment_label === 'Bearish' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' : 'bg-slate-800 text-slate-400')}">
-                                    ${n.sentiment_label} (${n.sentiment_score > 0 ? '+' : ''}${n.sentiment_score.toFixed(2)})
+                                    ${esc(n.sentiment_label)} (${n.sentiment_score > 0 ? '+' : ''}${n.sentiment_score.toFixed(2)})
                                 </span>
                             </div>
                         `).join('');
@@ -398,7 +590,7 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Generating Briefing...';
             btn.disabled = true;
             try {
-                const res = await fetch('/market/report', {
+                const res = await api('/market/report', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ report_type: 'daily' })
@@ -409,6 +601,9 @@
                     document.getElementById('reportContent').textContent = data.report;
                     document.getElementById('reportTime').textContent = new Date(data.generated_at).toLocaleTimeString();
                     document.getElementById('reportContainer').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    alert('Report generation failed: ' + (err.detail || res.status));
                 }
             } catch (e) {
                 alert('Report generation failed: ' + e);
@@ -432,7 +627,7 @@
             const hist = document.getElementById('chatHistory');
             hist.innerHTML += `
                 <div class="bg-emerald-950/50 border border-emerald-800/50 p-3 rounded-2xl text-emerald-200 text-xs self-end text-right ml-6 shadow-sm">
-                    ${msg}
+                    ${esc(msg)}
                 </div>
             `;
             input.value = '';
@@ -441,22 +636,23 @@
             const loadId = 'load-' + Date.now();
             hist.innerHTML += `
                 <div id="${loadId}" class="bg-slate-900/90 p-3 rounded-2xl text-slate-400 text-xs border border-slate-800 mr-6 flex items-center gap-2">
-                    <i class="fa-solid fa-circle-notch fa-spin text-emerald-400"></i> Thinking on RTX 4060 GPU...
+                    <i class="fa-solid fa-circle-notch fa-spin text-emerald-400"></i> Thinking...
                 </div>
             `;
             hist.scrollTop = hist.scrollHeight;
 
             try {
-                const res = await fetch('/chat', {
+                const res = await api('/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: msg })
                 });
                 const data = await res.json();
                 document.getElementById(loadId).remove();
+                const reply = res.ok ? data.reply : `Error: ${data.detail || res.status}`;
                 hist.innerHTML += `
                     <div class="bg-slate-900/90 p-3.5 rounded-2xl text-slate-200 border border-slate-800 mr-4 text-xs leading-relaxed whitespace-pre-line shadow-sm">
-                        ${data.reply}
+                        ${esc(reply)}
                     </div>
                 `;
                 hist.scrollTop = hist.scrollHeight;
@@ -464,7 +660,7 @@
                 document.getElementById(loadId).remove();
                 hist.innerHTML += `
                     <div class="bg-rose-950/40 border border-rose-800/40 p-3 rounded-2xl text-rose-300 text-xs mr-4">
-                        Failed to reach AI: ${err}
+                        Failed to reach AI: ${esc(err)}
                     </div>
                 `;
             }

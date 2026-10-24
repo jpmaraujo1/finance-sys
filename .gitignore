@@ -1,4 +1,4 @@
-﻿# Byte-compiled / optimized / DLL files
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -10,6 +10,11 @@ __pycache__/
 # Database & Upload Data
 data/finance.db
 data/finance.db-journal
+data/finance.db-wal
+data/finance.db-shm
+data/backups/
+data/logs/
+data/reports/
 data/uploads/*
 !data/uploads/.gitkeep
 data/vectordb/*

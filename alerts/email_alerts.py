@@ -7,6 +7,7 @@ from signal_engine.models import Signal, SignalType
 
 def create_email_html(signal: Signal) -> str:
     """Render clean HTML email template for trading signal."""
+    hit_rate_text = f"{signal.win_rate}%" if signal.win_rate is not None else "unproven (not enough history yet)"
     reasons_li = "".join(f"<li>{r}</li>" for r in signal.reasons)
     color = "#10B981" if "BUY" in signal.signal_type.value else ("#EF4444" if "SELL" in signal.signal_type.value else "#F59E0B")
 
@@ -33,9 +34,9 @@ def create_email_html(signal: Signal) -> str:
             <div class="content">
                 <div class="metrics">
                     <p><strong>Current Price:</strong> ${signal.current_price:.2f}</p>
-                    <p><strong>Confidence:</strong> {signal.confidence}%</p>
+                    <p><strong>Rule score:</strong> {signal.confidence} (indicator agreement, not a probability)</p>
                     <p><strong>RSI:</strong> {signal.rsi or 'N/A'}</p>
-                    <p><strong>Historical Win Rate:</strong> {signal.win_rate or 'N/A'}%</p>
+                    <p><strong>Backtested hit rate:</strong> {hit_rate_text}</p>
                 </div>
                 <h3>Technical Indicators Confluence:</h3>
                 <ul>{reasons_li}</ul>
@@ -61,7 +62,7 @@ def send_email_alert(
     if not (to_email and smtp_host and smtp_user and smtp_password):
         return False
 
-    subject = f"[{signal.signal_type.value}] {signal.symbol} @ ${signal.current_price:.2f} (Confidence: {signal.confidence}%)"
+    subject = f"[{signal.signal_type.value}] {signal.symbol} @ ${signal.current_price:.2f} (score {signal.confidence})"
     html_content = create_email_html(signal)
 
     msg = MIMEMultipart("alternative")

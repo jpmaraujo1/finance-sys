@@ -3,11 +3,11 @@ from loguru import logger
 from signal_engine.models import Signal, SignalType
 
 EMOJI_MAP = {
-    SignalType.STRONG_BUY: "?? STRONG BUY",
-    SignalType.BUY: "?? BUY",
-    SignalType.HOLD: "?? HOLD",
-    SignalType.SELL: "?? SELL",
-    SignalType.STRONG_SELL: "?? STRONG SELL",
+    SignalType.STRONG_BUY: "\U0001F7E2 STRONG BUY",
+    SignalType.BUY: "\U0001F7E2 BUY",
+    SignalType.HOLD: "\u26AA HOLD",
+    SignalType.SELL: "\U0001F534 SELL",
+    SignalType.STRONG_SELL: "\U0001F534 STRONG SELL",
 }
 
 
@@ -16,27 +16,29 @@ def send_telegram_alert(signal: Signal, bot_token: str, chat_id: str) -> bool:
     if not bot_token or not chat_id:
         return False
 
-    emoji_header = EMOJI_MAP.get(signal.signal_type, "?? ALERT")
-    reasons_text = "\n".join(f"? {r}" for r in signal.reasons)
+    emoji_header = EMOJI_MAP.get(signal.signal_type, "\U0001F514 ALERT")
+    reasons_text = "\n".join(f"\u2022 {r}" for r in signal.reasons)
 
-    win_rate_line = f"?? Historical Win Rate: {signal.win_rate}%\n" if signal.win_rate else ""
-    rsi_line = f"?? RSI: {signal.rsi}\n" if signal.rsi else ""
+    if signal.win_rate is not None:
+        track_line = f"Backtested hit rate: {signal.win_rate}%\n"
+    else:
+        track_line = "Track record: unproven (not enough history yet)\n"
+    rsi_line = f"RSI: {signal.rsi}\n" if signal.rsi is not None else ""
 
     text = (
-        f"{emoji_header} ? {signal.symbol}\n\n"
-        f"?? Price: ${signal.current_price:.2f}\n"
+        f"{emoji_header} \u2014 {signal.symbol}\n\n"
+        f"Price: {signal.current_price:.4f}\n"
         f"{rsi_line}"
-        f"?? Confidence: {signal.confidence}%\n"
-        f"{win_rate_line}\n"
-        f"Key Factors:\n{reasons_text}\n\n"
-        f"?? Automated technical analysis for informational purposes only. Not financial advice."
+        f"Rule score: {signal.confidence} (indicator agreement, not a probability)\n"
+        f"{track_line}\n"
+        f"Key factors:\n{reasons_text}\n\n"
+        f"\u26A0\uFE0F Automated technical analysis for informational purposes only. Not financial advice."
     )
 
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {
         "chat_id": chat_id,
         "text": text,
-        "parse_mode": "Markdown",
     }
 
     try:

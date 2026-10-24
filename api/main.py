@@ -1,13 +1,14 @@
-﻿from fastapi.responses import FileResponse
 import os
+import secrets
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
 import httpx
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 from loguru import logger
 
 from .models import (
@@ -37,8 +38,11 @@ from signal_engine.database import (
     add_to_watchlist,
     remove_from_watchlist,
     get_prices,
+    get_backtest_results,
+    get_status,
 )
 from signal_engine.models import WatchlistItem, MarketType
+from signal_engine.tracker import performance_summary
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 LLM_MODEL = os.getenv("LLM_MODEL", "llama3.1:8b")
@@ -54,13 +58,55 @@ app = FastAPI(
     version="2.0.0",
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Optional shared secret. When API_KEY is set, every endpoint except the dashboard
+# page and /health requires it (header "X-API-Key"). Set it whenever the server is
+# reachable from other devices (HOST=0.0.0.0).
+API_KEY = os.getenv("API_KEY", "").strip()
+PUBLIC_PATHS = {"/", "/health", "/favicon.ico"}
+
+
+@app.middleware("http")
+async def require_api_key(request: Request, call_next):
+    if API_KEY and request.method != "OPTIONS" and request.url.path not in PUBLIC_PATHS:
+        supplied = request.headers.get("x-api-key", "")
+        if not secrets.compare_digest(supplied, API_KEY):
+            return JSONResponse(status_code=401, content={"detail": "Missing or invalid API key"})
+    return await call_next(request)
+
+
+# The dashboard is served by this same server, so cross-origin access is off by default.
+# List extra origins in CORS_ORIGINS (comma separated) only if you need them.
+CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+if CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=CORS_ORIGINS,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+
+def to_signal_response(s, name_map) -> SignalResponse:
+    return SignalResponse(
+        id=s.id,
+        symbol=s.symbol,
+        display_name=name_map.get(s.symbol, s.symbol),
+        market=MarketTypeResponse(s.market.value),
+        timestamp=s.timestamp,
+        signal_type=SignalTypeResponse(s.signal_type.value),
+        confidence=s.confidence,
+        reasons=s.reasons,
+        current_price=s.current_price,
+        rsi=s.rsi,
+        macd=s.macd,
+        win_rate=s.win_rate,
+        sentiment=s.sentiment,
+        is_entry=s.is_entry,
+    )
+
+
+def _hit_rate_text(s) -> str:
+    return f"backtested hit rate {s.win_rate}%" if s.win_rate is not None else "hit rate: not enough evidence yet"
 
 
 @app.get("/", response_class=FileResponse)
@@ -70,13 +116,31 @@ async def serve_dashboard():
 
 @app.get("/health")
 async def health_check():
+    engine = {"running": False, "last_cycle": None}
+    try:
+        status = get_status()
+        cycle = status.get("price_cycle")
+        if cycle:
+            last = datetime.fromisoformat(cycle["updated_at"])
+            age_min = (datetime.now(timezone.utc) - last).total_seconds() / 60
+            engine = {
+                "running": age_min < 15,
+                "last_cycle": cycle["updated_at"],
+                "minutes_since_last_cycle": round(age_min, 1),
+                "last_cycle_stats": cycle["value"],
+            }
+    except Exception as e:
+        engine["error"] = str(e)
+
+    result = {"status": "ok" if engine["running"] else "degraded", "engine": engine, "model": LLM_MODEL}
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=5.0)
             resp.raise_for_status()
-        return {"status": "ok", "ollama": "connected", "model": LLM_MODEL}
+        result["ollama"] = "connected"
     except Exception as e:
-        return {"status": "degraded", "ollama_error": str(e), "model": LLM_MODEL}
+        result["ollama"] = f"unavailable ({e.__class__.__name__})"
+    return result
 
 
 @app.get("/models")
@@ -110,12 +174,17 @@ async def chat(request: ChatRequest):
         recent_signals = get_signals(limit=10)
         if recent_signals:
             sig_lines = [
-                f"- {s.symbol} ({s.market.value}): {s.signal_type.value} (Confidence {s.confidence}%, Price ${s.current_price:.2f})"
+                f"- {s.symbol} ({s.market.value}): {s.signal_type.value} (rule score {s.confidence}, "
+                f"{_hit_rate_text(s)}, price {s.current_price:.4f})"
                 for s in recent_signals
             ]
             messages.append({
                 "role": "system",
-                "content": "Current active market indicator signals (for reference):\n" + "\n".join(sig_lines),
+                "content": (
+                    "Current market indicator signals (for reference). The rule score ranks how many "
+                    "indicators agree and is NOT a probability; only the measured hit rate is evidence "
+                    "of how often a signal has been right.\n" + "\n".join(sig_lines)
+                ),
             })
     except Exception as e:
         logger.debug(f"Signal injection skipped: {e}")
@@ -147,14 +216,15 @@ async def upload_document(file: UploadFile = File(...)):
     if file_ext not in allowed_extensions:
         raise HTTPException(status_code=400, detail=f"Unsupported format: {file_ext}")
 
-    save_path = UPLOAD_DIR / file.filename
+    safe_name = Path(file.filename or "upload").name  # strip any directory parts
+    save_path = UPLOAD_DIR / safe_name
     with open(save_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
     try:
         chunks_count = ingest_document(str(save_path))
         return DocumentUploadResponse(
-            filename=file.filename,
+            filename=safe_name,
             chunks_indexed=chunks_count,
             status="indexed",
         )
@@ -214,23 +284,7 @@ async def market_summary():
         name_map = {item.symbol: item.display_name for item in watchlist_items}
 
         top_sigs = sorted(signals, key=lambda x: x.confidence, reverse=True)[:5]
-        top_resps = [
-            SignalResponse(
-                id=s.id,
-                symbol=s.symbol,
-                display_name=name_map.get(s.symbol, s.symbol),
-                market=MarketTypeResponse(s.market.value),
-                timestamp=s.timestamp,
-                signal_type=SignalTypeResponse(s.signal_type.value),
-                confidence=s.confidence,
-                reasons=s.reasons,
-                current_price=s.current_price,
-                rsi=s.rsi,
-                macd=s.macd,
-                win_rate=s.win_rate,
-            )
-            for s in top_sigs
-        ]
+        top_resps = [to_signal_response(s, name_map) for s in top_sigs]
 
         return MarketSummaryResponse(
             total_tracked=len(watchlist_items),
@@ -257,23 +311,7 @@ async def list_signals(
         watchlist_items = get_watchlist()
         name_map = {item.symbol: item.display_name for item in watchlist_items}
         signals = get_signals(symbol=symbol, limit=limit, latest_only=latest_only)
-        return [
-            SignalResponse(
-                id=s.id,
-                symbol=s.symbol,
-                display_name=name_map.get(s.symbol, s.symbol),
-                market=MarketTypeResponse(s.market.value),
-                timestamp=s.timestamp,
-                signal_type=SignalTypeResponse(s.signal_type.value),
-                confidence=s.confidence,
-                reasons=s.reasons,
-                current_price=s.current_price,
-                rsi=s.rsi,
-                macd=s.macd,
-                win_rate=s.win_rate,
-            )
-            for s in signals
-        ]
+        return [to_signal_response(s, name_map) for s in signals]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
@@ -359,7 +397,7 @@ async def remove_watchlist_item(symbol: str):
 
 
 @app.get("/market/prices/{symbol}")
-async def get_price_history(symbol: str, hours: int = Query(default=24, le=168)):
+async def get_price_history(symbol: str, hours: int = Query(default=24, le=24 * 90)):
     try:
         df = get_prices(symbol, hours=hours)
         if df.empty:
@@ -387,7 +425,8 @@ async def generate_ai_report(req: AIReportRequest):
         news = get_recent_news(hours=12, limit=15)
 
         sig_summary = "\n".join([
-            f"- {s.symbol} ({s.market.value}): {s.signal_type.value} @ ${s.current_price:.2f} (Confidence: {s.confidence}%, RSI: {s.rsi or 'N/A'}, Reasons: {', '.join(s.reasons)})"
+            f"- {s.symbol} ({s.market.value}): {s.signal_type.value} @ {s.current_price:.4f} "
+            f"(rule score {s.confidence}, {_hit_rate_text(s)}, RSI: {s.rsi or 'N/A'}, Reasons: {', '.join(s.reasons)})"
             for s in signals[:15]
         ])
 
@@ -402,10 +441,12 @@ async def generate_ai_report(req: AIReportRequest):
             f"=== RECENT NEWS HEADLINES & SENTIMENT ===\n{news_summary}\n\n"
             f"Generate a clear, structured market advisory report with:\n"
             f"1. Executive Market Assessment (Risk sentiment & directional bias)\n"
-            f"2. Top Opportunities (High conviction BUY/STRONG_BUY setups with reasoning)\n"
+            f"2. Notable BUY/STRONG_BUY setups with reasoning, quoting the measured hit rate when one exists\n"
             f"3. Key Risks & Overbought Assets (SELL/STRONG_SELL warnings)\n"
             f"4. Sector / Crypto / Macro Highlights\n"
             f"5. Actionable Next Steps & Risk Management rules\n\n"
+            f"The rule score is not a probability. Where a signal has no measured hit rate, say plainly that "
+            f"its track record is unproven. Do not overstate certainty.\n"
             f"Always include an explicit disclaimer stating this is technical analysis for informational purposes and not licensed financial advice."
         )
 
@@ -426,3 +467,24 @@ async def generate_ai_report(req: AIReportRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Report generation error: {e}")
+
+
+@app.get("/market/performance")
+async def market_performance(
+    days: Optional[float] = Query(default=None, description="Only signals from the last N days"),
+    entries_only: bool = Query(default=True),
+):
+    """Live forward-tracking results: how signals actually performed after they were issued."""
+    try:
+        return performance_summary(days=days, entries_only=entries_only)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Performance summary failed: {e}")
+
+
+@app.get("/market/backtest")
+async def market_backtest(symbol: Optional[str] = None):
+    """Latest periodic walk-forward backtest results (refreshed every 6 hours)."""
+    try:
+        return get_backtest_results(symbol)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")

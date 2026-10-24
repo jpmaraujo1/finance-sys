@@ -30,8 +30,10 @@ class Signal:
     current_price: float
     rsi: Optional[float] = None
     macd: Optional[float] = None
-    win_rate: Optional[float] = None  # backtested win rate percentage
+    win_rate: Optional[float] = None  # measured hit rate (%) for this signal type, None if too few samples
     id: Optional[int] = None
+    sentiment: Optional[float] = None  # recent news sentiment used as an input, if any
+    is_entry: bool = False  # True when the signal type changed vs the previous signal for this symbol
 
 
 @dataclass

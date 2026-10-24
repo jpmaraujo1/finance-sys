@@ -17,7 +17,7 @@ def get_binance_client() -> BinanceClient:
     return BinanceClient(api_key=BINANCE_API_KEY or None, api_secret=BINANCE_API_SECRET or None)
 
 
-def fetch_yfinance(symbol: str, interval: str = "5m", period: str = "5d") -> List[Price]:
+def fetch_yfinance(symbol: str, interval: str = "5m", period: str = "2d") -> List[Price]:
     """Fetch OHLCV candle data from Yahoo Finance for Stocks and Forex."""
     prices: List[Price] = []
     try:
@@ -31,6 +31,7 @@ def fetch_yfinance(symbol: str, interval: str = "5m", period: str = "5d") -> Lis
             ts = idx.to_pydatetime()
             if ts.tzinfo is None:
                 ts = ts.replace(tzinfo=timezone.utc)
+            ts = ts.astimezone(timezone.utc)
             prices.append(
                 Price(
                     symbol=symbol,
@@ -98,3 +99,43 @@ def fetch_all(watchlist: List[WatchlistItem]) -> List[Price]:
         except Exception as e:
             logger.error(f"Failed to fetch prices for {item.symbol}: {e}")
     return all_prices
+
+
+# ---------------------------------------------------------------------------
+# Historical backfill (used by `python -m signal_engine.backfill`)
+# ---------------------------------------------------------------------------
+
+def fetch_binance_history(symbol: str, days: int = 90, interval: str = "5m") -> List[Price]:
+    """Page backwards through Binance klines to collect `days` of history (1000 candles per call)."""
+    import time
+
+    client = get_binance_client()
+    end_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    start_ms = end_ms - days * 24 * 60 * 60 * 1000
+    prices: List[Price] = []
+    cursor = start_ms
+    while cursor < end_ms:
+        try:
+            klines = client.get_klines(symbol=symbol, interval=interval, startTime=cursor, limit=1000)
+        except Exception as e:
+            logger.error(f"Binance history fetch failed for {symbol}: {e}")
+            break
+        if not klines:
+            break
+        for k in klines:
+            prices.append(Price(
+                symbol=symbol,
+                timestamp=datetime.fromtimestamp(k[0] / 1000.0, tz=timezone.utc),
+                open=float(k[1]), high=float(k[2]), low=float(k[3]), close=float(k[4]), volume=float(k[5]),
+            ))
+        next_cursor = klines[-1][0] + 1
+        if next_cursor <= cursor:
+            break
+        cursor = next_cursor
+        time.sleep(0.2)  # stay well inside Binance rate limits
+    return prices
+
+
+def fetch_yfinance_history(symbol: str, days: int = 60) -> List[Price]:
+    """Yahoo only serves 5-minute candles for roughly the last 60 days."""
+    return fetch_yfinance(symbol, interval="5m", period=f"{min(days, 59)}d")

@@ -1,4 +1,4 @@
-﻿[Unit]
+[Unit]
 Description=Finance AI 24/7 Market Signal Engine
 After=network.target
 
@@ -6,6 +6,8 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/finance-sys
+Environment=OPEN_BROWSER=false
+Environment=PYTHONUNBUFFERED=1
 ExecStart=/home/pi/finance-sys/venv/bin/python3 run_local.py
 Restart=always
 RestartSec=10

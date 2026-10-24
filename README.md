@@ -1,4 +1,4 @@
-﻿# Finance AI Quantitative Market Signal & Local Advisory System
+# Finance AI Quantitative Market Signal & Local Advisory System
 
 A **100% self-hosted, offline, and zero-cost financial intelligence suite** combining a **24/7 quantitative indicator scanner** with a **private local LLM financial advisor (LLaMA 3.1 8B)**. 
 
@@ -19,6 +19,8 @@ Runs entirely on consumer hardware (tested on an **AMD Ryzen 7 5700X3D + NVIDIA 
   - [4. Trend EMAs & Volume Anomalies](#4-trend-emas--volume-anomalies)
   - [5. Confluence Matrix (Why HOLD on Oversold?)](#5-confluence-matrix-why-hold-on-oversold)
 - [NLP News Sentiment Engine](#-nlp-news-sentiment-engine)
+- [Measuring Whether It Works](#-measuring-whether-it-works)
+- [Running It for Months at Home](#-running-it-for-months-at-home)
 - [Tracked Asset Coverage](#-tracked-asset-coverage)
 - [Project Directory Structure](#-project-directory-structure)
 - [Hardware & Software Prerequisites](#-hardware--software-prerequisites)
@@ -34,7 +36,7 @@ Runs entirely on consumer hardware (tested on an **AMD Ryzen 7 5700X3D + NVIDIA 
 
 ## Overview & Philosophy
 
-Most commercial financial AI products charge recurring monthly subscriptions ($20â€“$100/mo) or per-token API fees while routing your private portfolio data through external corporate servers. Furthermore, pure language models (like raw ChatGPT or Claude) cannot reliably track live numerical prices or perform rapid statistical calculus across thousands of financial candles.
+Most commercial financial AI products charge recurring monthly subscriptions ($20–$100/mo) or per-token API fees while routing your private portfolio data through external corporate servers. Furthermore, pure language models (like raw ChatGPT or Claude) cannot reliably track live numerical prices or perform rapid statistical calculus across thousands of financial candles.
 
 **Finance AI solves both problems by separating math from language:**
 
@@ -87,20 +89,23 @@ flowchart TD
 ## Core Features
 
 - **Multi-Market Scanning**: Live tracking across US Mega-Cap Tech, S&P 500 / NASDAQ ETFs, Cryptocurrencies, Major Forex pairs, and Brazilian Equities (B3).
-- **Rule-Based Confluence Voting**: Replaces emotional trading with a strict multi-indicator agreement matrix.
-- **Deduplicated Signal Pipeline**: View the latest live state of all assets at a glance without clutter.
+- **Rule-Based Confluence Voting**: A strict multi-indicator agreement matrix, now including recent news sentiment as one vote.
+- **Completed Candles Only**: Signals are computed on finished candles, and only stored when a new candle exists, so closed markets don't produce a stream of duplicate signals.
+- **Honest Walk-Forward Backtester**: Replays the exact live rules over months of history, counts each signal once, subtracts realistic trading costs and compares against simply holding the asset.
+- **Live Track Record**: Every BUY/SELL signal is graded 1h, 4h and 24h after it was issued. After a few months this is real, hindsight-free evidence of whether the signals work.
+- **ML Research Bench**: A walk-forward machine-learning experiment that tests whether a model beats the rules on your accumulated data.
 - **Falling Knife Protection**: Automatically holds back on BUY signals when momentum is still collapsing, even if RSI is deeply oversold.
 - **VADER News Sentiment Analysis**: Continuously scans financial RSS feeds (Reuters, Yahoo Finance, CoinDesk, InfoMoney) and calculates real-time market sentiment (-1.0 to +1.0).
 - **One-Click AI Executive Briefings**: Instantly prompts local LLaMA 3.1 to synthesize technical data into a strategic market report.
-- **Instant Push Alerts**: Supports automated dispatch of high-conviction trade alerts to **Telegram** and **Email (SMTP)**.
-- **Zero-Dependency Native Mode**: Runs directly on Windows with Python and SQLiteâ€”no WSL or Docker virtualization required.
+- **Instant Push Alerts**: Sends **Telegram** and **Email (SMTP)** alerts when a new STRONG_BUY / STRONG_SELL appears (once per signal, not every 5 minutes).
+- **Zero-Dependency Native Mode**: Runs directly on Windows with Python and SQLite, no WSL or Docker virtualization required.
 
 ---
 
 ## Quantitative Indicator Methodology
 
 ### 1. Relative Strength Index (RSI)
-Calculated using a 14-period exponential smoothing formula:
+Calculated with Wilder's 14-period exponential smoothing:
 
 ```math
 \text{RSI} = 100 - \left( \frac{100}{1 + \text{RS}} \right)
@@ -140,7 +145,7 @@ Measures statistical volatility using a 20-period Simple Moving Average and $\pm
 \text{Lower Band} = \text{SMA}_{20} - (2 \times \sigma_{20})
 ```
 
-When price tags the lower band, it is trading at a statistical outlier discount ($z \le -2.0$).
+The engine measures position within the bands as a z-score, $z = (\text{Close} - \text{SMA}_{20}) / \sigma_{20}$, and votes when $|z| \ge 2$. A z-score means the same thing for a calm FX pair and a volatile altcoin (a fixed "within 1% of the band" rule fires almost constantly on low-volatility assets).
 
 ### 4. Trend EMAs & Volume Anomalies
 - **EMA Alignment:** Evaluates short-term momentum by comparing $\text{EMA}_9$ against $\text{EMA}_{21}$, and long-term trend against $\text{EMA}_{50}$ / $\text{EMA}_{200}$.
@@ -175,6 +180,8 @@ flowchart TD
 ```
 
 * **Example:** If Bitcoin's RSI hits **21.7** (heavily oversold), but the MACD histogram is negative and dropping, the system refuses to buy. It issues a **`HOLD`** to prevent entering a cascading drop. It upgrades to **`BUY`** only once momentum flattens or curls upward.
+* **News vote:** when at least 2 headlines tagged with the asset appeared in the last 6 hours and their average sentiment is beyond ±0.25, sentiment adds one bullish or bearish point (tunable in `.env`, `SENTIMENT_WEIGHT=0` disables it).
+* **Rule score ≠ probability:** the score shown next to each signal (formerly "confidence") only ranks how many factors agree. How often a signal type is actually right is the **hit rate**, which is measured, not assumed. When there are fewer than 20 historical cases, the dashboard says "unproven" instead of showing a number.
 
 ---
 
@@ -186,9 +193,69 @@ Every 15 minutes, the sentiment engine parses global financial news feeds:
 - **Brazil (B3):** InfoMoney, Folha Mercado
 
 Headlines are processed through the **VADER (Valence Aware Dictionary and sEntiment Reasoner)** NLP pipeline to generate a normalized compound polarity score:
-- **Compound Score > +0.05:** Categorized as **Bullish** ðŸŸ¢
-- **Compound Score < -0.05:** Categorized as **Bearish** ðŸ”´
-- **-0.05 to +0.05:** Categorized as **Neutral** âšª
+- **Compound Score > +0.05:** Categorized as **Bullish**
+- **Compound Score < -0.05:** Categorized as **Bearish**
+- **-0.05 to +0.05:** Categorized as **Neutral**
+
+Headlines are tagged to assets with whole-word keyword matching (short tickers like `ETH` or `ADA` are case-sensitive, so "method" or "Canada" don't get tagged).
+
+> **Limitation:** VADER is an English-language model. Portuguese headlines (InfoMoney, Folha) mostly score near zero, so news currently has little influence on B3 signals.
+
+---
+
+## Measuring Whether It Works
+
+Indicators that look convincing on a chart often don't make money after costs. The system now measures this three ways.
+
+### 1. Backfill history
+```bash
+python -m signal_engine.backfill            # ~90 days for crypto, ~60 days for stocks/forex (Yahoo's limit)
+```
+
+### 2. Walk-forward backtest
+```bash
+python -m signal_engine.backtester                  # all assets, 1-hour holding period
+python -m signal_engine.backtester --horizon 48     # 4-hour holding period
+python -m signal_engine.backtester --symbols BTCUSDT ETHUSDT
+```
+It replays the exact live rules candle by candle (no look-ahead), counts each signal only when it first appears, subtracts round-trip costs (crypto 0.20%, US stocks 0.05%, B3 0.10%, forex 0.03%, editable in `.env`) and reports per signal type:
+
+| Column | Meaning |
+| :--- | :--- |
+| `entries` | independent signals (5-minute repeats of the same signal are not counted) |
+| `hit%` | share that made money after costs |
+| `avg net%` | average return per signal after costs |
+| `edge vs long%` | return compared with simply holding the asset over the same period, **the number that matters** |
+| `t` | t-statistic of that edge; above ~2 suggests it isn't luck |
+
+It also simulates following the signals long-only versus buy & hold. The engine re-runs this every 6 hours, and the dashboard's **Track Record → Backtest** tab shows the pooled result.
+
+### 3. Live track record (the real test)
+Every BUY/SELL signal is graded automatically 1h, 4h and 24h after it was issued. Unlike a backtest, these signals were produced before the outcome existed, so they can't be flattered by hindsight. See **Track Record → Live** in the dashboard or `GET /market/performance`.
+
+How to judge it after a few months:
+* Look at the **pooled** rows and at **edge vs long**, not hit rate alone (in a rising market even random BUYs "win" often).
+* With 24 assets × 4 signal types, a few cells will look great by pure chance. Trust results that hold across horizons, markets and time.
+* Rows with fewer than 20 signals are dimmed: too few to conclude anything.
+
+### 4. ML experiment (optional)
+```bash
+pip install -r requirements_research.txt
+python -m research.ml_experiment --market crypto --horizon 12
+```
+Trains gradient boosting and logistic regression on indicator, return, time-of-day and news-sentiment features with purged walk-forward validation, and compares trading on its predictions against always-long and the rule-based BUYs. It is validated to find nothing in pure noise and to find a planted pattern, so a positive result on your data is worth a closer look; a result of AUC ≈ 0.50 means no predictive signal.
+
+---
+
+## Running It for Months at Home
+
+* **Raspberry Pi / always-on machine:** copy `finance-ai.service` to `/etc/systemd/system/`, then `sudo systemctl enable --now finance-ai`. It restarts automatically on crashes and reboots.
+* **Access from other devices:** by default the dashboard only listens on this computer (`HOST=127.0.0.1`). To open it from your phone, set `HOST=0.0.0.0` **and** `API_KEY=<some long random string>` in `.env`; the dashboard asks for the key once.
+* **Health check:** the header shows *Engine live* or *Engine stalled*; `GET /health` reports minutes since the last cycle.
+* **Logs:** `data/logs/finance-ai.log` (rotated at 10 MB, 10 files kept).
+* **Backups:** a snapshot of the database is written daily to `data/backups/` (newest 7 kept). Copy one off the machine now and then.
+* **Disk use:** at most about 3 MB per day with the default 24 assets (~1 GB per year), so an SD card or small disk is fine.
+* **Data sources:** Yahoo Finance data via `yfinance` is fine for personal research but isn't licensed for commercial use. A product built on this would need a licensed data provider.
 
 ---
 
@@ -233,14 +300,20 @@ finance-ai/
 │   └── retriever.py             # Vector similarity search
 ├── signal_engine/
 │   ├── __init__.py
-│   ├── backtester.py            # Historical win rate calculations
-│   ├── database.py              # SQLite CRUD operations
-│   ├── data_fetcher.py          # Multi-market price data scraper
+│   ├── backfill.py              # Download months of history for backtests
+│   ├── backtester.py            # Walk-forward backtest with costs & baselines
+│   ├── config.py                # Costs, horizons, sentiment settings (env-overridable)
+│   ├── database.py              # SQLite storage (UTC timestamps, backups, tracking tables)
+│   ├── data_fetcher.py          # Multi-market price data fetcher
 │   ├── main.py                  # Standalone worker daemon entrypoint
 │   ├── models.py                # Shared dataclasses & enums
 │   ├── scheduler.py             # APScheduler background task manager
 │   ├── sentiment.py             # VADER news sentiment analyzer
-│   └── technical_analysis.py    # Vectorized indicator math (pure Pandas/NumPy)
+│   ├── technical_analysis.py    # Vectorized indicator math (pure Pandas/NumPy)
+│   └── tracker.py               # Live forward tracking of every signal
+├── research/
+│   └── ml_experiment.py         # Walk-forward ML experiment (optional, scikit-learn)
+├── tests/                       # Unit tests (python -m unittest discover tests)
 ├── .env.example                 # Configuration template
 ├── Dockerfile.api               # Optional Docker container for API
 ├── Dockerfile.signal            # Optional Docker container for worker
@@ -283,8 +356,7 @@ ollama pull llama3.1:8b
 ### 4. Launch the System
 Double-click **`run.bat`** or run:
 ```cmd
-.
-un.bat
+.\run.bat
 ```
 *(Or via PowerShell: `py run_local.py`)*
 
@@ -326,6 +398,11 @@ The interactive Swagger documentation is available at **`http://localhost:8080/d
 | `GET` | `/market/prices/{symbol}` | Fetch raw OHLCV price history for charting |
 | `POST`| `/market/report` | Trigger local LLM to generate an executive market report |
 | `POST`| `/chat` | Conversational endpoint connecting user queries with market data & LLaMA |
+| `GET` | `/market/performance` | Live track record per horizon and signal type (`?days=30` to limit the window) |
+| `GET` | `/market/backtest` | Latest walk-forward backtest results per asset and signal type |
+| `GET` | `/health` | Engine heartbeat (minutes since last cycle) and Ollama status |
+
+When `API_KEY` is set, every endpoint except `/` and `/health` requires the header `X-API-Key: <key>`.
 
 ---
 
@@ -393,6 +470,15 @@ curl -X POST http://localhost:8080/market/watchlist   -H "Content-Type: applicat
 
 #### Q: Are any external API keys required to start?
 **A:** No. Out of the box, data is pulled using free public endpoints from Yahoo Finance and Binance. Telegram, Email, and Alpha Vantage keys are strictly optional.
+
+---
+
+## Running the Tests
+
+```bash
+python -m unittest discover tests
+```
+The suite checks indicator math, that backtests have no look-ahead and match live signals, that random data shows no edge, database migrations, live outcome grading, news tagging, and (if scikit-learn is installed) the ML pipeline.
 
 ---
 
